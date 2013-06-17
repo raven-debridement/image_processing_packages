@@ -7,7 +7,9 @@
 	<param name="right_image_topic" value="/right/image_raw" />
     </node>
 
+    <remap from="image" to="anaglyph_images" /> 
+    <remap from="left_images" to="/left/image_raw" />
+    <remap from="right_images" to="/right/image_raw" />
     <node name="anaglyph_viewer" pkg="image_view" type="image_view" >
-	<param name="image" value="anaglyph_images" />
     </node>
 </launch>

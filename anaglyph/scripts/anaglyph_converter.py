@@ -40,11 +40,11 @@ class image_converter:
 	if self.left!=False and self.right!=False:
 	    channels = []
 	    for i in range(6):
-		channels.append(cv.CreateImage(cv.GetSize(self.left),8,1))
-	    cv.Split(self.left, channels[0], channels[1], channels[2], None)
-  	    cv.Split(self.right, channels[3], channels[4], channels[5], None)
-	    merge = cv.CreateImage(cv.GetSize(self.left), 8, 3)
-   	    cv.Merge(channels[3],channels[4],channels[2], None, merge)
+		channels.append(cv.cvCreateImage(cv.getSize(self.left),8,1)
+	    cv.cvSplit(self.left, channels[0], channels[1], channels[2], None);
+  	    cv.cvSplit(self.right, channels[3], channels[4], channels[5], None);
+	    merge = cv.cvCreateImage(cv.cvGetSize(self.left, 8, 3)
+   	    cv.cvMerge(channels[3],channels[4],channels[2], None, merge);
             #cv.ShowImage("Image window", merge)
             #cv.WaitKey(3)
             try:
@@ -55,7 +55,7 @@ class image_converter:
 	    self.right = False
 
 def main(args):
-    publish_topic = "anaglyph_images"
+    publish_topic = rospy.get_param('~publish_topic', "anaglyph_images")
     left_image_topic = rospy.get_param('~left_image_topic', "/left/image_raw")
     right_image_topic = rospy.get_param('~right_image_topic', "/right/image_raw")
     ic = image_converter(publish_topic, left_image_topic, right_image_topic)
