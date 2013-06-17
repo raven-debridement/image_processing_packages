@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/meg/catkin_ws/src/raven_pose_estimator/build/devel/setup.sh

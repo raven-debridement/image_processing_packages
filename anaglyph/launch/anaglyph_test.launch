@@ -1,0 +1,13 @@
+<launch>
+    <include file="$(find uvc_camera)/launch/stereo_node.launch" />
+
+    <node name="converter" pkg="anaglyph" type="anaglyph_converter" >
+    	<param name="publish_topic" value="anaglyph_images" />
+ 	<param name="left_image_topic" value="/left/image_raw" />
+	<param name="right_image_topic" value="/right/image_raw" />
+    </node>
+
+    <node name="anaglyph_viewer" pkg="image_view" type="image_view" >
+	<param name="image" value="anaglyph_images" />
+    </node>
+</launch>

@@ -1,0 +1,18 @@
+<package>
+  <description brief="raven_pose_estimator">
+
+     raven_pose_estimator
+
+  </description>
+  <author>Jonathan</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/raven_pose_estimator</url>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="tf"/>
+
+</package>
+
+

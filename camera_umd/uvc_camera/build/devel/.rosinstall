@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/devel/setup.sh

@@ -1,0 +1,21 @@
+<package>
+  <description brief="anaglyph">
+
+     anaglyph
+
+  </description>
+  <author>Meg</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/anaglyph</url>
+  <depend package="rospy"/>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="image_transport"/>
+
+</package>
+
+
