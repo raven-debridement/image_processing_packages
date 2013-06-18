@@ -1,7 +1,7 @@
 <launch>
     <include file="$(find uvc_camera)/launch/stereo_node.launch" />
 
-    <!-- <include file="$(find stereo_image_proc)/launch/stereo_image_proc.launch" /> -->
+    <include file="$(find stereo_image_proc)/launch/stereo_image_proc.launch" /> 
 
     <node pkg="tf" type="static_transform_publisher" name="camera_to_ground" args="0 0 0 0 0 0 ground camera 100" />
 
@@ -21,7 +21,7 @@
 	<param name="publish_topic" type="string" value="right_ar_markers" />
     </node>
 
-    <node name="pose_estimator" pkg="raven_pose_estimator">
+    <node name="pose_estimator" pkg="raven_pose_estimator" type="pose_estimator">
 	<param name="output_frame" value="ground" />
 	<param name="camera_id" value="camera" />
     </node>

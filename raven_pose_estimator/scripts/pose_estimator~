@@ -15,7 +15,6 @@ from geometry_msgs.msg import PoseStamped
 
 class PoseEstimator:
     def __init__(self, frame, camera):
-	rospy.loginfo("HERE, initiated")
 	self.left_point_subscriber = rospy.Subscriber("left_ar_markers", ARMarkers, self.left_handle_markers)
         self.right_point_subscriber = rospy.Subscriber("right_ar_markers", ARMarkers, self.right_handle_markers)
    	self.joint_pose_publisher = rospy.Publisher("joints_and_poses", ARMarkers)

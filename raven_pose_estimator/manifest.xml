@@ -13,7 +13,6 @@
   <depend package="geometry_msgs"/>
   <depend package="tf"/>
   <depend package="ar_pose"/>
-
 </package>
 
 
