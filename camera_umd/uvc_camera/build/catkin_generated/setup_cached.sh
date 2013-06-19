@@ -15,4 +15,4 @@ export LD_LIBRARY_PATH="/home/meg/catkin_ws/src/image_processing_packages/camera
 export PATH="/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/devel/bin:$PATH"
 export PKG_CONFIG_PATH="/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/devel/lib/pkgconfig:$PKG_CONFIG_PATH"
 export PYTHONPATH="/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/devel/lib/python2.7/dist-packages:$PYTHONPATH"
-export ROS_PACKAGE_PATH="/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera:/home/meg/catkin_ws/src/camera_umd/uvc_camera:/opt/ros/groovy/share:/opt/ros/groovy/stacks"
+export ROS_PACKAGE_PATH="/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera:/opt/ros/groovy/share:/opt/ros/groovy/stacks"
