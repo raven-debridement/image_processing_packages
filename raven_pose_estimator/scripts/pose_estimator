@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-import roslib
-roslib.load_manifest('raven_pose_estimator')
+
 import rospy
 import tf
 import image_geometry
@@ -13,62 +12,64 @@ from geometry_msgs.msg import PoseStamped
 #FIXME change the value of camera id in the launch file
 #FIXME figure out how camera to ground transformations are going to work; figure out the actual values
 
+#global dictionary that maps from id number to an actual position on the robot
+ids_to_joints = {1: "left shoulder",
+		 2: "left end",
+		 3: "right shoulder",
+		 4: "right end"}
+
 class PoseEstimator:
     def __init__(self, frame, camera):
-	rospy.loginfo("HERE, initiated")
-	self.left_point_subscriber = rospy.Subscriber("left_ar_markers", ARMarkers, self.left_handle_markers)
-        self.right_point_subscriber = rospy.Subscriber("right_ar_markers", ARMarkers, self.right_handle_markers)
-   	self.joint_pose_publisher = rospy.Publisher("joints_and_poses", ARMarkers)
+	self.left_point_subscriber = rospy.Subscriber("left_ar_markers", ARMarkers, left_handle_markers)
+        self.right_point_subscriber = rospy.Subscriber("right_ar_markers", ARMarkers, right_handle_markers)
+   	self.joint_pose_publisher = rospy.Publisher("joints_and_poses", JointsAndPoses)
 	self.transform_listener = tf.TransformListener()
 	self.right_poses_dict = {}
 	self.left_poses_dict = {}
-	self.ar_markers = ARMarkers()
+	self.joints_and_poses = JointsAndPoses()
 	self.output_frame = frame
 	self.camera_id = camera
 
     # called when a list of AR markers is published for the right camera
     # stores poses in a dictionary that maps from id number to pose
     def right_handle_markers(self, right_markers):
-	rospy.loginfo("RIGHT RECEIVED MARKER")
 	for marker in right_markers.markers:
-	    self.right_poses_dict[marker.id] = marker
+	    self.right_poses_dict[marker.id] = marker.pose.pose
 	self.handle_both()	
 
     # called when a list of AR markers is published for the left camera
     # stores poses in a dictionary that maps from id number to pose
     def left_handle_markers(self, left_markers):
-	rospy.loginfo("LEFT RECEIVED MARKER")
 	for marker in left_markers.markers:
-	    self.left_poses_dict[marker.id] = marker
+	    self.left_poses_dict[marker.id] = marker.pose.pose
 	self.handle_both()
 
     # waits until there are values in both right_poses_dict and left_poses_dict
     # calls helper functions to calculate more accurate poses, and publishes those poses
     # then clears the dictionaries
     def handle_both(self):
-	rospy.loginfo("HANDLE BOTH CALLED")
 	if self.right_poses_dict and self.left_poses_dict:
 	    self.calculate_poses()
-        self.publish()
-        self.left_poses_dict = {}
-        self.right_poses_dict = {}	    	    
+	    self.publish()
+	    self.left_poses_dict = {}
+	    self.right_poses_dict = {}	    	    
     
     # goes through the poses in the right_poses_dict and the left_poses_dict and calculates 
     # a more accurate value for them; calls the helper function convert_stereo
     def calculate_poses(self):
+	joints = []
+	poses = []
 	for id_number in self.right_poses_dict.keys():
-	    if id_number in self.left_poses_dict.keys(): # if the ar marker is present in both left and right images
-		marker = ARMarker()
-		marker.id = id_number
-		marker.header = self.left_poses_dict[id_number].header #USE the left pose header
-		marker.pose = self.convert_stereo(self.left_poses_dict[id_number].pose, self.right_poses_dict[id_number].pose)
-		ar_markers.markers.append(marker)
-	self.ar_markers.header = self.left_poses_dict[0].header
+	    if id_number in self.left_poses_dict.keys():
+		joints.append(ids_to_joints[id_number])
+		poses.append(self.convert_stereo(left_poses_dict[id_number], right_poses_dict[id_number])) 
+	self.joints_and_poses.joints = joints
+	self.joints_and_poses.poses = poses
 
     # publishes the message with joints and poses
     def publish(self):
-	self.joint_pose_publisher.publish(self.ar_markers)	
-	self.ar_markers = ARMarkers()
+	self.joint_pose_publisher.publish(self.joints_and_poses)
+	self.joints_and_poses = JointsAndPoses()	
 
     # takes in two poses and returns a more accurate pose based on their values 
     # uses the stereo_model object from the image_geometry module for calculations

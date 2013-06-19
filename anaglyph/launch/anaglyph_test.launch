@@ -1,8 +1,4 @@
 <launch>
-    <remap from="image" to="anaglyph_images" />     
-    <remap from="left_image" to="/left/image_raw" />
-    <remap from="right_image" to="/right/image_raw" />
-
     <include file="$(find uvc_camera)/launch/stereo_node.launch" />
 
     <node name="converter" pkg="anaglyph" type="anaglyph_converter" >
@@ -11,6 +7,9 @@
 	<param name="right_image_topic" value="/right/image_raw" />
     </node>
 
+    <remap from="image" to="anaglyph_images" /> 
+    <remap from="left_images" to="/left/image_raw" />
+    <remap from="right_images" to="/right/image_raw" />
     <node name="anaglyph_viewer" pkg="image_view" type="image_view" >
     </node>
 </launch>

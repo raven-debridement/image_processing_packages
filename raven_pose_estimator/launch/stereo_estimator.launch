@@ -1,11 +1,11 @@
 <launch>
     <include file="$(find uvc_camera)/launch/stereo_node.launch" />
 
-    <node name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc" />
+    <!-- <include file="$(find stereo_image_proc)/launch/stereo_image_proc.launch" /> -->
 
     <node pkg="tf" type="static_transform_publisher" name="camera_to_ground" args="0 0 0 0 0 0 ground camera 100" />
 
-    <node ns="left" name="left_ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+    <node name="left_ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
  	<param name="image_topic" value="/left/image_raw" />
 	<param name="info_topic" value="/left/camera_info" />
         <param name="marker_pattern_list" type="string" value="$(find ar_pose)/data/object_4x4"/>
@@ -13,7 +13,7 @@
 	<param name="publish_topic" type="string" value="left_ar_markers" />
     </node>
 
-    <node ns="right" name="right_ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+    <node name="right_ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
 	<param name="image_topic" value="/right/image_raw" />
 	<param name="info_topic" value="/right/camera_info" />
         <param name="marker_pattern_list" type="string" value="$(find ar_pose)/data/object_4x4"/>
