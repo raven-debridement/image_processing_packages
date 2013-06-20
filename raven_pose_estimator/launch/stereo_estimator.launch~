@@ -1,3 +1,5 @@
+<!-- a general launch file that should work on most systems -->
+
 <launch>
     <include file="$(find uvc_camera)/launch/stereo_node.launch" />
 

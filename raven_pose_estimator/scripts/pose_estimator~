@@ -10,27 +10,28 @@ from ar_pose.msg import ARMarkers
 from geometry_msgs.msg import PoseWithCovariance
 from geometry_msgs.msg import Pose
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import QuaternionStamped
+from sensor_msgs.msg import CameraInfo
 
-#FIXME change the value of camera id in the launch file
-#FIXME figure out how camera to ground transformations are going to work; figure out the actual values
-
-#global dictionary that maps from id number to an actual position on the robot
-ids_to_joints = {1: "left shoulder",
-		 2: "left end",
-		 3: "right shoulder",
-		 4: "right end"}
+#FIXME make sure there is a transform publishing between left and right cameras
 
 class PoseEstimator:
-    def __init__(self, frame, camera):
-	self.left_point_subscriber = rospy.Subscriber("left_ar_markers", ARMarkers, left_handle_markers)
-        self.right_point_subscriber = rospy.Subscriber("right_ar_markers", ARMarkers, right_handle_markers)
+    def __init__(self, left_camera, right_camera):
+	self.left_point_subscriber = rospy.Subscriber("left_ar_markers", ARMarkers, self.left_handle_markers)
+        self.right_point_subscriber = rospy.Subscriber("right_ar_markers", ARMarkers, self.right_handle_markers)
    	self.joint_pose_publisher = rospy.Publisher("joints_and_poses", ARMarkers)
+	self.left_info_sub = rospy.Subscriber("/%s/camera_info"%left_camera, CameraInfo, self.update_left_info)
+	self.right_info_sub = rospy.Subscriber("/%s/camera_info"%right_camera, CameraInfo, self.update_right_info)
 	self.transform_listener = tf.TransformListener()
 	self.right_poses_dict = {}
 	self.left_poses_dict = {}
 	self.joints_and_poses = ARMarkers()
-	self.output_frame = frame
-	self.camera_id = camera
+
+    def update_left_info(self, cam_info):
+	self.left_info = cam_info
+
+    def update_right_info(self, cam_info):
+	self.right_info = cam_info
 
     # called when a list of AR markers is published for the right camera
     # stores poses in a dictionary that maps from id number to pose
@@ -58,6 +59,7 @@ class PoseEstimator:
     
     # goes through the poses in the right_poses_dict and the left_poses_dict and calculates 
     # a more accurate value for them; calls the helper function convert_stereo
+    #FIXME currently ignores poses if they are not in both the right and left cameras; but will want to remedy that
     def calculate_poses(self):
 	joints = []
 	poses = []
@@ -66,45 +68,49 @@ class PoseEstimator:
 		marker = ARMarker()
 		marker.header = self.left_poses_dict[id_number].header
 		marker.id = id_number
-		marker.confidence = self.left_poses_dict[id_number].confidence
-		marker.pose = self.convert_stereo(self.left_poses_dict[id_number].pose.pose, self.right_poses_dict[id_number].pose.pose)
+		marker.confidence = self.left_poses_dict[id_number].confidence#FIXME confidence is currently set equal to confidence of left pose
+		marker.pose = self.convert_stereo(self.left_poses_dict[id_number].pose, self.right_poses_dict[id_number].pose)
 		self.joints_and_poses.markers.append(marker)
-	self.joints_and_poses.header = self.left_poses_dict[0].header
+	self.joints_and_poses.header = self.left_poses_dict[0].header #set header equal to header of the first left pose--is that ok??
 
     # publishes the message with joints and poses
     def publish(self):
 	self.joint_pose_publisher.publish(self.joints_and_poses)
 	self.joints_and_poses = ARMarkers()	
 
-    # takes in two poses and returns a more accurate pose based on their values 
+    # takes in two PoseWithCovariance messages and returns a more accurate pose based on their values 
     # uses the stereo_model object from the image_geometry module for calculations
-    def convert_stereo(self,p1,p2):
-        u = p1.position.x
-        v = p2.position.y
-        disparity = p1.position.x - p2.position.x
+    def convert_stereo(self,left,right):
+        u = left.pose.position.x #PoseStamped.Pose.Position.x
+        v = right.pose.position.y
+        disparity = left.pose.position.x - right.pose.position.x
         
         stereo_model = image_geometry.StereoCameraModel()
-        stereo_model.fromCameraInfo(left.camera_info,right.camera_info)
+        stereo_model.fromCameraInfo(self.left_info,self.right_info)
         (x,y,z) = stereo_model.projectPixelTo3d((u,v),disparity)
-        accurate_pose = PoseStamped()
-        accurate_pose.header.stamp = rospy.Time.now()
+        accurate_pose = PoseWithCovariance()
         accurate_pose.pose.point.x = x
         accurate_pose.pose.point.y = y
         accurate_pose.pose.point.z = z
-	accurate_pose.orientation.x = p1.orientation.x
-	accurate_pose.orientation.y = p1.orientation.y
-	accurate_pose.orientation.z = p1.orientation.z
-	accurate_pose.orientation.w = p1.orientation.w
-	self.transform_listener.waitForTransform(self.output_frame, self.camera_id, rospy.Time.now(), rospy.Duration(4.0))
-	output_pose = self.listener.transformPose(self.output_frame, accurate_pose)
-        return output_pose
+	self.transform_listener.waitForTransform(self.left_frame, self.right_frame, rospy.Time.now(), rospy.Duration(4.0)) 
+	right_quat_stamped = QuaternionStamped()
+	right_quat_stamped.quaternion.x = right.pose.orientation.x
+	right_quat_stamped.quaternion.y = right.pose.orientation.y
+	right_quat_stamped.quaternion.z = right.pose.orientation.z
+	right_quat_stamped.quaternion.w = right.pose.orientation.w
+	transformed_orientation = self.listener.transformQuaternion(self.left_frame, right_quat_stamped) #FIXME apparently the argument has to be a QuaternionStamped, but i'm not sure if right.pose.orientation is a quaternionstamped. . .  
+	accurate_pose.orientation.x = (left.pose.orientation.x + transformed_orientation.quaternion.x)/2 
+	accurate_pose.orientation.y = (left.pose.orientation.y + transformed_orientation.quaternion.y)/2 
+	accurate_pose.orientation.z = (left.pose.orientation.z + transformed_orientation.quaternion.z)/2 
+	accurate_pose.orientation.w = (left.pose.orientation.w + transformed_orientation.quaternion.w)/2 
+        return accurate_pose
 
 
 def main():
     rospy.init_node("pose_estimator")
-    outputframe = rospy.get_param('~output_frame',"output_frame_default")
-    camera_id = rospy.get_param('~camera_id', "camera")
-    p = PoseEstimator(outputframe, camera_id)
+    left_camera = 'left'
+    right_camera = 'right'
+    p = PoseEstimator(left_camera, right_camera)
     rospy.spin()
 
 

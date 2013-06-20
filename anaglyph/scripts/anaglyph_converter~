@@ -55,9 +55,9 @@ class image_converter:
 	    self.right = False
 
 def main(args):
-    publish_topic = "anaglyph_images")
-    left_image_topic = rospy.get_param('~left_image_topic', "/left/image_raw")
-    right_image_topic = rospy.get_param('~right_image_topic', "/right/image_raw")
+    publish_topic = "anaglyph_images"
+    left_image_topic = 'left_image_topic'
+    right_image_topic = 'left_image_topic' #rospy.get_param('~right_image_topic', "/right/image_raw")
     ic = image_converter(publish_topic, left_image_topic, right_image_topic)
     rospy.init_node('image_converter', anonymous=True)
     try:
