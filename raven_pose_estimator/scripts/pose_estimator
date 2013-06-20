@@ -4,6 +4,7 @@ import roslib
 roslib.load_manifest('raven_pose_estimator')
 import rospy
 import tf
+import math
 import image_geometry
 from ar_pose.msg import ARMarker
 from ar_pose.msg import ARMarkers
@@ -14,6 +15,25 @@ from geometry_msgs.msg import QuaternionStamped
 from sensor_msgs.msg import CameraInfo
 
 #FIXME make sure there is a transform publishing between left and right cameras
+
+# takes in two quaternions and returns their dot product
+def quat_dot_product(q1, q2):
+    return q1.x*q2.x + q1.y*q2.y + q1.z*q2.z +q1.w*q2.w
+
+# finds the SLERP interpolation between two quaternions
+def slerp(q1, q2, t):
+    dot_product = quat_dot_product(q1,q2)
+    theta = math.acos(dot_product)
+    x = (math.sin((1-t)*theta)/math.sin(theta))*q1.x + (math.sin(t*theta)/math.sin(theta))*q2.x
+    y = (math.sin((1-t)*theta)/math.sin(theta))*q1.y + (math.sin(t*theta)/math.sin(theta))*q2.y
+    z = (math.sin((1-t)*theta)/math.sin(theta))*q1.z + (math.sin(t*theta)/math.sin(theta))*q2.z
+    w = (math.sin((1-t)*theta)/math.sin(theta))*q1.w + (math.sin(t*theta)/math.sin(theta))*q2.w
+    result = QuaternionStamped()
+    result.quaternion.x = x
+    result.quaternion.y = y
+    result.quaternion.z = z
+    result.quaternion.w = w
+    return result
 
 class PoseEstimator:
     def __init__(self, left_camera, right_camera):
@@ -59,7 +79,7 @@ class PoseEstimator:
     
     # goes through the poses in the right_poses_dict and the left_poses_dict and calculates 
     # a more accurate value for them; calls the helper function convert_stereo
-    #FIXME currently ignores poses if they are not in both the right and left cameras; but will want to remedy that
+    #FIXME currently ignores poses if they are not in both the right and left cameras; but will want to remedy that later on
     def calculate_poses(self):
 	joints = []
 	poses = []
@@ -95,18 +115,11 @@ class PoseEstimator:
 	self.transform_listener.waitForTransform(self.left_frame, self.right_frame, rospy.Time.now(), rospy.Duration(4.0)) 
 
 	right_quat_stamped = QuaternionStamped()
-	right_quat_stamped.quaternion.x = right.pose.orientation.x
-	right_quat_stamped.quaternion.y = right.pose.orientation.y
-	right_quat_stamped.quaternion.z = right.pose.orientation.z
-	right_quat_stamped.quaternion.w = right.pose.orientation.w
+	right_quat_stamped.quaternion = right.pose.orientation
+	transformed_orientation = self.listener.transformQuaternion(self.left_frame, right_quat_stamped) 
+	accurate_pose.orientation = slerp(transformed_orientation.quaternion, left.orientation, 0.5) 
 
-	transformed_orientation = self.listener.transformQuaternion(self.left_frame, right_quat_stamped) #FIXME apparently the argument has to be a QuaternionStamped, but i'm not sure if right.pose.orientation is a quaternionstamped. . .  
-	accurate_pose.orientation.x = (left.pose.orientation.x + transformed_orientation.quaternion.x)/2 
-	accurate_pose.orientation.y = (left.pose.orientation.y + transformed_orientation.quaternion.y)/2 
-	accurate_pose.orientation.z = (left.pose.orientation.z + transformed_orientation.quaternion.z)/2 
-	accurate_pose.orientation.w = (left.pose.orientation.w + transformed_orientation.quaternion.w)/2 
         return accurate_pose
-
 
 def main():
     rospy.init_node("pose_estimator")
