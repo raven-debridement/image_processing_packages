@@ -47,7 +47,7 @@ namespace ar_pose
     // **** get parameters
 
     if (!n_param.getParam ("image_topic", cameraImageTopic_))
-      cameraImageTopic_ = "/camera/image_raw";
+      cameraImageTopic_ = "/camera/image_rect_color";
 
     if (!n_param.getParam ("info_topic", cameraInfoTopic_))
       cameraInfoTopic_ = "/camera/camera_info";
@@ -187,7 +187,6 @@ namespace ar_pose
       argCleanup ();
       ROS_BREAK ();
     }
-
     arPoseMarkers_.markers.clear ();
     // check for known patterns
     for (i = 0; i < objectnum; i++)

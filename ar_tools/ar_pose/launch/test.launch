@@ -1,0 +1,39 @@
+<!---->
+<launch>
+	<!-- start prosilica hd camera (only if needed) -->
+  	<!-- include file="$(find pr2_sweeping_perception)/launch/perception_start_prosilica.launch"/ -->
+
+	<!-- dynamically reconfigure prosilica camera to polling mode (since streaming would give too many images) -->
+	<node name="$(anon dynparam)" type="dynparam" pkg="dynamic_reconfigure" args="set /prosilica_driver trigger_mode 'polling'"/>
+	
+	<!-- prosilica image_proc -->
+	<node pkg="nodelet" type="nodelet" name="downsample_nodelet" args="standalone image_proc/crop_decimate">
+		<remap from="camera" to="prosilica"/>
+		<remap from="camera_out" to="prosilica_downsampled"/>
+	</node>
+	
+	<node name="$(anon dynparam)" type="dynparam" pkg="dynamic_reconfigure" args="set /downsample_nodelet decimation_x 4"/>
+	<node name="$(anon dynparam)" type="dynparam" pkg="dynamic_reconfigure" args="set /downsample_nodelet decimation_y 4"/>
+		
+	<node ns="/prosilica_downsampled" name="image_proc" pkg="image_proc" type="image_proc" output="screen" respawn="true"/>
+
+
+
+	<group ns="pr2_sweeping_perception" clear_params="true">
+
+        <!-- start ar_marker in multi-marker-mode -->
+        <node name="ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
+            <param name="marker_pattern_list" type="string" value="../../../../../..$(find pr2_sweeping_perception)/ar_marker_pattern/patternlist"/>
+            <param name="threshold" type="int" value="100"/>
+
+            <remap from="/usb_cam/camera_info" to="/prosilica_downsampled/camera_info"/>
+            <remap from="/usb_cam/image_raw" to="/prosilica_downsampled/image_rect"/>
+         </node>
+
+        <!-- start polling prosilia -->
+        <node name="prosilica_polling" pkg="pr2_sweeping_perception" type="prosilica_polling" respawn="false" output="screen"/>
+    
+        <!-- start wrapper node for ar_marker-messages -->
+        <node name="ar_marker_to_perception" pkg="pr2_sweeping_perception" type="ar_marker_perception" respawn="false" output="screen"/>
+	</group>
+</launch>
