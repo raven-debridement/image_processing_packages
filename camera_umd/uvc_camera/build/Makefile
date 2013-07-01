@@ -35,68 +35,27 @@ CMAKE_COMMAND = /usr/bin/cmake
 # The command to remove a file.
 RM = /usr/bin/cmake -E remove -f
 
-# Escaping for special characters.
-EQUALS = =
+# The program to use to edit the cache.
+CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera
+CMAKE_SOURCE_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build
+CMAKE_BINARY_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build
 
 #=============================================================================
 # Targets provided globally by CMake.
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running interactive CMake command-line interface..."
-	/usr/bin/cmake -i .
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/usr/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
 edit_cache/fast: edit_cache
 .PHONY : edit_cache/fast
-
-# Special rule for the target install
-install: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install
-
-# Special rule for the target install
-install/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install/fast
-
-# Special rule for the target install/local
-install/local: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local
-
-# Special rule for the target install/local
-install/local/fast: install/local
-.PHONY : install/local/fast
-
-# Special rule for the target install/strip
-install/strip: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip
-
-# Special rule for the target install/strip
-install/strip/fast: install/strip
-.PHONY : install/strip/fast
-
-# Special rule for the target list_install_components
-list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
-.PHONY : list_install_components
-
-# Special rule for the target list_install_components
-list_install_components/fast: list_install_components
-.PHONY : list_install_components/fast
 
 # Special rule for the target rebuild_cache
 rebuild_cache:
@@ -110,9 +69,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -153,6 +112,19 @@ ROSBUILD_genmsg_cpp/fast:
 .PHONY : ROSBUILD_genmsg_cpp/fast
 
 #=============================================================================
+# Target rules for targets named ROSBUILD_genmsg_lisp
+
+# Build rule for target.
+ROSBUILD_genmsg_lisp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 ROSBUILD_genmsg_lisp
+.PHONY : ROSBUILD_genmsg_lisp
+
+# fast build rule for target.
+ROSBUILD_genmsg_lisp/fast:
+	$(MAKE) -f CMakeFiles/ROSBUILD_genmsg_lisp.dir/build.make CMakeFiles/ROSBUILD_genmsg_lisp.dir/build
+.PHONY : ROSBUILD_genmsg_lisp/fast
+
+#=============================================================================
 # Target rules for targets named ROSBUILD_gensrv_cpp
 
 # Build rule for target.
@@ -164,6 +136,19 @@ ROSBUILD_gensrv_cpp: cmake_check_build_system
 ROSBUILD_gensrv_cpp/fast:
 	$(MAKE) -f CMakeFiles/ROSBUILD_gensrv_cpp.dir/build.make CMakeFiles/ROSBUILD_gensrv_cpp.dir/build
 .PHONY : ROSBUILD_gensrv_cpp/fast
+
+#=============================================================================
+# Target rules for targets named ROSBUILD_gensrv_lisp
+
+# Build rule for target.
+ROSBUILD_gensrv_lisp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 ROSBUILD_gensrv_lisp
+.PHONY : ROSBUILD_gensrv_lisp
+
+# fast build rule for target.
+ROSBUILD_gensrv_lisp/fast:
+	$(MAKE) -f CMakeFiles/ROSBUILD_gensrv_lisp.dir/build.make CMakeFiles/ROSBUILD_gensrv_lisp.dir/build
+.PHONY : ROSBUILD_gensrv_lisp/fast
 
 #=============================================================================
 # Target rules for targets named camera_node
@@ -179,30 +164,17 @@ camera_node/fast:
 .PHONY : camera_node/fast
 
 #=============================================================================
-# Target rules for targets named clean_test_results
+# Target rules for targets named clean-test-results
 
 # Build rule for target.
-clean_test_results: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 clean_test_results
-.PHONY : clean_test_results
+clean-test-results: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 clean-test-results
+.PHONY : clean-test-results
 
 # fast build rule for target.
-clean_test_results/fast:
-	$(MAKE) -f CMakeFiles/clean_test_results.dir/build.make CMakeFiles/clean_test_results.dir/build
-.PHONY : clean_test_results/fast
-
-#=============================================================================
-# Target rules for targets named doxygen
-
-# Build rule for target.
-doxygen: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 doxygen
-.PHONY : doxygen
-
-# fast build rule for target.
-doxygen/fast:
-	$(MAKE) -f CMakeFiles/doxygen.dir/build.make CMakeFiles/doxygen.dir/build
-.PHONY : doxygen/fast
+clean-test-results/fast:
+	$(MAKE) -f CMakeFiles/clean-test-results.dir/build.make CMakeFiles/clean-test-results.dir/build
+.PHONY : clean-test-results/fast
 
 #=============================================================================
 # Target rules for targets named nodelet_uvc_camera
@@ -216,19 +188,6 @@ nodelet_uvc_camera: cmake_check_build_system
 nodelet_uvc_camera/fast:
 	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/build
 .PHONY : nodelet_uvc_camera/fast
-
-#=============================================================================
-# Target rules for targets named rosbuild_clean-test-results
-
-# Build rule for target.
-rosbuild_clean-test-results: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rosbuild_clean-test-results
-.PHONY : rosbuild_clean-test-results
-
-# fast build rule for target.
-rosbuild_clean-test-results/fast:
-	$(MAKE) -f CMakeFiles/rosbuild_clean-test-results.dir/build.make CMakeFiles/rosbuild_clean-test-results.dir/build
-.PHONY : rosbuild_clean-test-results/fast
 
 #=============================================================================
 # Target rules for targets named rosbuild_precompile
@@ -294,19 +253,6 @@ rospack_gensrv: cmake_check_build_system
 rospack_gensrv/fast:
 	$(MAKE) -f CMakeFiles/rospack_gensrv.dir/build.make CMakeFiles/rospack_gensrv.dir/build
 .PHONY : rospack_gensrv/fast
-
-#=============================================================================
-# Target rules for targets named run_tests
-
-# Build rule for target.
-run_tests: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 run_tests
-.PHONY : run_tests
-
-# fast build rule for target.
-run_tests/fast:
-	$(MAKE) -f CMakeFiles/run_tests.dir/build.make CMakeFiles/run_tests.dir/build
-.PHONY : run_tests/fast
 
 #=============================================================================
 # Target rules for targets named stereo_node
@@ -386,187 +332,107 @@ tests/fast:
 	$(MAKE) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/build
 .PHONY : tests/fast
 
-#=============================================================================
-# Target rules for targets named gtest
-
-# Build rule for target.
-gtest: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 gtest
-.PHONY : gtest
-
-# fast build rule for target.
-gtest/fast:
-	$(MAKE) -f gtest/CMakeFiles/gtest.dir/build.make gtest/CMakeFiles/gtest.dir/build
-.PHONY : gtest/fast
-
-#=============================================================================
-# Target rules for targets named gtest_main
-
-# Build rule for target.
-gtest_main: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 gtest_main
-.PHONY : gtest_main
-
-# fast build rule for target.
-gtest_main/fast:
-	$(MAKE) -f gtest/CMakeFiles/gtest_main.dir/build.make gtest/CMakeFiles/gtest_main.dir/build
-.PHONY : gtest_main/fast
-
-src/camera.o: src/camera.cpp.o
+# target to build an object file
+src/camera.o:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.o
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/camera.o
 .PHONY : src/camera.o
 
-# target to build an object file
-src/camera.cpp.o:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.cpp.o
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/camera.cpp.o
-.PHONY : src/camera.cpp.o
-
-src/camera.i: src/camera.cpp.i
+# target to preprocess a source file
+src/camera.i:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.i
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/camera.i
 .PHONY : src/camera.i
 
-# target to preprocess a source file
-src/camera.cpp.i:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.cpp.i
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/camera.cpp.i
-.PHONY : src/camera.cpp.i
-
-src/camera.s: src/camera.cpp.s
+# target to generate assembly for a file
+src/camera.s:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.s
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/camera.s
 .PHONY : src/camera.s
 
-# target to generate assembly for a file
-src/camera.cpp.s:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.cpp.s
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/camera.cpp.s
-.PHONY : src/camera.cpp.s
-
-src/camera_node.o: src/camera_node.cpp.o
+# target to build an object file
+src/camera_node.o:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.o
 .PHONY : src/camera_node.o
 
-# target to build an object file
-src/camera_node.cpp.o:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.cpp.o
-.PHONY : src/camera_node.cpp.o
-
-src/camera_node.i: src/camera_node.cpp.i
+# target to preprocess a source file
+src/camera_node.i:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.i
 .PHONY : src/camera_node.i
 
-# target to preprocess a source file
-src/camera_node.cpp.i:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.cpp.i
-.PHONY : src/camera_node.cpp.i
-
-src/camera_node.s: src/camera_node.cpp.s
+# target to generate assembly for a file
+src/camera_node.s:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.s
 .PHONY : src/camera_node.s
 
-# target to generate assembly for a file
-src/camera_node.cpp.s:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.cpp.s
-.PHONY : src/camera_node.cpp.s
-
-src/nodelets.o: src/nodelets.cpp.o
+# target to build an object file
+src/nodelets.o:
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/nodelets.o
 .PHONY : src/nodelets.o
 
-# target to build an object file
-src/nodelets.cpp.o:
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/nodelets.cpp.o
-.PHONY : src/nodelets.cpp.o
-
-src/nodelets.i: src/nodelets.cpp.i
+# target to preprocess a source file
+src/nodelets.i:
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/nodelets.i
 .PHONY : src/nodelets.i
 
-# target to preprocess a source file
-src/nodelets.cpp.i:
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/nodelets.cpp.i
-.PHONY : src/nodelets.cpp.i
-
-src/nodelets.s: src/nodelets.cpp.s
+# target to generate assembly for a file
+src/nodelets.s:
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/nodelets.s
 .PHONY : src/nodelets.s
 
-# target to generate assembly for a file
-src/nodelets.cpp.s:
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/nodelets.cpp.s
-.PHONY : src/nodelets.cpp.s
-
-src/stereo.o: src/stereo.cpp.o
+# target to build an object file
+src/stereo.o:
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/stereo.o
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.o
 .PHONY : src/stereo.o
 
-# target to build an object file
-src/stereo.cpp.o:
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/stereo.cpp.o
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.cpp.o
-.PHONY : src/stereo.cpp.o
-
-src/stereo.i: src/stereo.cpp.i
+# target to preprocess a source file
+src/stereo.i:
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/stereo.i
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.i
 .PHONY : src/stereo.i
 
-# target to preprocess a source file
-src/stereo.cpp.i:
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/stereo.cpp.i
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.cpp.i
-.PHONY : src/stereo.cpp.i
-
-src/stereo.s: src/stereo.cpp.s
+# target to generate assembly for a file
+src/stereo.s:
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/stereo.s
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.s
 .PHONY : src/stereo.s
 
-# target to generate assembly for a file
-src/stereo.cpp.s:
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/stereo.cpp.s
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.cpp.s
-.PHONY : src/stereo.cpp.s
-
-src/stereo_node.o: src/stereo_node.cpp.o
+# target to build an object file
+src/stereo_node.o:
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.o
 .PHONY : src/stereo_node.o
 
-# target to build an object file
-src/stereo_node.cpp.o:
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o
-.PHONY : src/stereo_node.cpp.o
-
-src/stereo_node.i: src/stereo_node.cpp.i
+# target to preprocess a source file
+src/stereo_node.i:
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.i
 .PHONY : src/stereo_node.i
 
-# target to preprocess a source file
-src/stereo_node.cpp.i:
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.cpp.i
-.PHONY : src/stereo_node.cpp.i
-
-src/stereo_node.s: src/stereo_node.cpp.s
+# target to generate assembly for a file
+src/stereo_node.s:
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.s
 .PHONY : src/stereo_node.s
 
-# target to generate assembly for a file
-src/stereo_node.cpp.s:
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.cpp.s
-.PHONY : src/stereo_node.cpp.s
-
-src/uvc_cam.o: src/uvc_cam.cpp.o
+# target to build an object file
+src/uvc_cam.o:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.o
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/uvc_cam.o
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.o
 .PHONY : src/uvc_cam.o
 
-# target to build an object file
-src/uvc_cam.cpp.o:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/uvc_cam.cpp.o
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o
-.PHONY : src/uvc_cam.cpp.o
-
-src/uvc_cam.i: src/uvc_cam.cpp.i
+# target to preprocess a source file
+src/uvc_cam.i:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.i
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/uvc_cam.i
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.i
 .PHONY : src/uvc_cam.i
 
-# target to preprocess a source file
-src/uvc_cam.cpp.i:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.cpp.i
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/uvc_cam.cpp.i
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.i
-.PHONY : src/uvc_cam.cpp.i
-
-src/uvc_cam.s: src/uvc_cam.cpp.s
-.PHONY : src/uvc_cam.s
-
 # target to generate assembly for a file
-src/uvc_cam.cpp.s:
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.cpp.s
-	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/uvc_cam.cpp.s
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.s
-.PHONY : src/uvc_cam.cpp.s
+src/uvc_cam.s:
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.s
+	$(MAKE) -f CMakeFiles/nodelet_uvc_camera.dir/build.make CMakeFiles/nodelet_uvc_camera.dir/src/uvc_cam.s
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.s
+.PHONY : src/uvc_cam.s
 
 # Help Target
 help:
@@ -575,32 +441,25 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... ROSBUILD_genmsg_cpp"
+	@echo "... ROSBUILD_genmsg_lisp"
 	@echo "... ROSBUILD_gensrv_cpp"
+	@echo "... ROSBUILD_gensrv_lisp"
 	@echo "... camera_node"
-	@echo "... clean_test_results"
-	@echo "... doxygen"
+	@echo "... clean-test-results"
 	@echo "... edit_cache"
-	@echo "... install"
-	@echo "... install/local"
-	@echo "... install/strip"
-	@echo "... list_install_components"
 	@echo "... nodelet_uvc_camera"
 	@echo "... rebuild_cache"
-	@echo "... rosbuild_clean-test-results"
 	@echo "... rosbuild_precompile"
 	@echo "... rosbuild_premsgsrvgen"
 	@echo "... rospack_genmsg"
 	@echo "... rospack_genmsg_libexe"
 	@echo "... rospack_gensrv"
-	@echo "... run_tests"
 	@echo "... stereo_node"
 	@echo "... test"
 	@echo "... test-future"
 	@echo "... test-results"
 	@echo "... test-results-run"
 	@echo "... tests"
-	@echo "... gtest"
-	@echo "... gtest_main"
 	@echo "... src/camera.o"
 	@echo "... src/camera.i"
 	@echo "... src/camera.s"

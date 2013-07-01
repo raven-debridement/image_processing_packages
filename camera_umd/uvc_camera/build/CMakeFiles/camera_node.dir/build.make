@@ -31,14 +31,14 @@ CMAKE_COMMAND = /usr/bin/cmake
 # The command to remove a file.
 RM = /usr/bin/cmake -E remove -f
 
-# Escaping for special characters.
-EQUALS = =
+# The program to use to edit the cache.
+CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera
+CMAKE_SOURCE_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build
+CMAKE_BINARY_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/camera_node.dir/depend.make
@@ -49,174 +49,153 @@ include CMakeFiles/camera_node.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/camera_node.dir/flags.make
 
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: CMakeFiles/camera_node.dir/flags.make
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: ../src/camera_node.cpp
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: ../manifest.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/cpp_common/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/rostime/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/roscpp_traits/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/roscpp_serialization/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/genmsg/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/genpy/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/message_runtime/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/std_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/geometry_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/sensor_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/camera_calibration_parsers/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/rosconsole/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/rosgraph_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/xmlrpcpp/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/roscpp/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/message_filters/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/console_bridge/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/class_loader/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/catkin/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/rospack/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/roslib/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/pluginlib/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/image_transport/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /home/meg/catkin_ws/src/image_common/camera_info_manager/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/bond/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/smclib/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/bondcpp/package.xml
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o: /opt/ros/groovy/share/nodelet/package.xml
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_1)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/camera_node.dir/src/camera_node.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/camera_node.dir/src/camera_node.cpp.o -c /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp
+CMakeFiles/camera_node.dir/src/camera_node.o: CMakeFiles/camera_node.dir/flags.make
+CMakeFiles/camera_node.dir/src/camera_node.o: ../src/camera_node.cpp
+CMakeFiles/camera_node.dir/src/camera_node.o: ../manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/roslang/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/roscpp/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/roslib/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/rostest/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/rosconsole/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/message_filters/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/share/rospy/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/bond_core/bond/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/bond_core/smclib/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/bond_core/bondcpp/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/manifest.xml
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/bond_core/bond/msg_gen/generated
+CMakeFiles/camera_node.dir/src/camera_node.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/camera_node.dir/src/camera_node.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/camera_node.dir/src/camera_node.o -c /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp
 
-CMakeFiles/camera_node.dir/src/camera_node.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/camera_node.dir/src/camera_node.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp > CMakeFiles/camera_node.dir/src/camera_node.cpp.i
+CMakeFiles/camera_node.dir/src/camera_node.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/camera_node.dir/src/camera_node.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp > CMakeFiles/camera_node.dir/src/camera_node.i
 
-CMakeFiles/camera_node.dir/src/camera_node.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/camera_node.dir/src/camera_node.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp -o CMakeFiles/camera_node.dir/src/camera_node.cpp.s
+CMakeFiles/camera_node.dir/src/camera_node.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/camera_node.dir/src/camera_node.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp -o CMakeFiles/camera_node.dir/src/camera_node.s
 
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o.requires:
-.PHONY : CMakeFiles/camera_node.dir/src/camera_node.cpp.o.requires
+CMakeFiles/camera_node.dir/src/camera_node.o.requires:
+.PHONY : CMakeFiles/camera_node.dir/src/camera_node.o.requires
 
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o.provides: CMakeFiles/camera_node.dir/src/camera_node.cpp.o.requires
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.cpp.o.provides.build
-.PHONY : CMakeFiles/camera_node.dir/src/camera_node.cpp.o.provides
+CMakeFiles/camera_node.dir/src/camera_node.o.provides: CMakeFiles/camera_node.dir/src/camera_node.o.requires
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera_node.o.provides.build
+.PHONY : CMakeFiles/camera_node.dir/src/camera_node.o.provides
 
-CMakeFiles/camera_node.dir/src/camera_node.cpp.o.provides.build: CMakeFiles/camera_node.dir/src/camera_node.cpp.o
+CMakeFiles/camera_node.dir/src/camera_node.o.provides.build: CMakeFiles/camera_node.dir/src/camera_node.o
 
-CMakeFiles/camera_node.dir/src/camera.cpp.o: CMakeFiles/camera_node.dir/flags.make
-CMakeFiles/camera_node.dir/src/camera.cpp.o: ../src/camera.cpp
-CMakeFiles/camera_node.dir/src/camera.cpp.o: ../manifest.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/cpp_common/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/rostime/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/roscpp_traits/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/roscpp_serialization/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/genmsg/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/genpy/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/message_runtime/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/std_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/geometry_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/sensor_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/camera_calibration_parsers/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/rosconsole/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/rosgraph_msgs/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/xmlrpcpp/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/roscpp/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/message_filters/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/console_bridge/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/class_loader/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/catkin/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/rospack/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/roslib/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/pluginlib/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/image_transport/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /home/meg/catkin_ws/src/image_common/camera_info_manager/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/bond/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/smclib/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/bondcpp/package.xml
-CMakeFiles/camera_node.dir/src/camera.cpp.o: /opt/ros/groovy/share/nodelet/package.xml
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_2)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/camera_node.dir/src/camera.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/camera_node.dir/src/camera.cpp.o -c /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp
+CMakeFiles/camera_node.dir/src/camera.o: CMakeFiles/camera_node.dir/flags.make
+CMakeFiles/camera_node.dir/src/camera.o: ../src/camera.cpp
+CMakeFiles/camera_node.dir/src/camera.o: ../manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/roslang/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/roscpp/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/roslib/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/rostest/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/rosconsole/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/message_filters/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/share/rospy/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/bond_core/bond/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/bond_core/smclib/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/bond_core/bondcpp/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/manifest.xml
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/bond_core/bond/msg_gen/generated
+CMakeFiles/camera_node.dir/src/camera.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_2)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/camera_node.dir/src/camera.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/camera_node.dir/src/camera.o -c /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp
 
-CMakeFiles/camera_node.dir/src/camera.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/camera_node.dir/src/camera.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp > CMakeFiles/camera_node.dir/src/camera.cpp.i
+CMakeFiles/camera_node.dir/src/camera.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/camera_node.dir/src/camera.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp > CMakeFiles/camera_node.dir/src/camera.i
 
-CMakeFiles/camera_node.dir/src/camera.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/camera_node.dir/src/camera.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp -o CMakeFiles/camera_node.dir/src/camera.cpp.s
+CMakeFiles/camera_node.dir/src/camera.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/camera_node.dir/src/camera.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp -o CMakeFiles/camera_node.dir/src/camera.s
 
-CMakeFiles/camera_node.dir/src/camera.cpp.o.requires:
-.PHONY : CMakeFiles/camera_node.dir/src/camera.cpp.o.requires
+CMakeFiles/camera_node.dir/src/camera.o.requires:
+.PHONY : CMakeFiles/camera_node.dir/src/camera.o.requires
 
-CMakeFiles/camera_node.dir/src/camera.cpp.o.provides: CMakeFiles/camera_node.dir/src/camera.cpp.o.requires
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.cpp.o.provides.build
-.PHONY : CMakeFiles/camera_node.dir/src/camera.cpp.o.provides
+CMakeFiles/camera_node.dir/src/camera.o.provides: CMakeFiles/camera_node.dir/src/camera.o.requires
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/camera.o.provides.build
+.PHONY : CMakeFiles/camera_node.dir/src/camera.o.provides
 
-CMakeFiles/camera_node.dir/src/camera.cpp.o.provides.build: CMakeFiles/camera_node.dir/src/camera.cpp.o
+CMakeFiles/camera_node.dir/src/camera.o.provides.build: CMakeFiles/camera_node.dir/src/camera.o
 
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: CMakeFiles/camera_node.dir/flags.make
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: ../src/uvc_cam.cpp
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: ../manifest.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/cpp_common/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rostime/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roscpp_traits/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roscpp_serialization/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/genmsg/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/genpy/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/message_runtime/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/std_msgs/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/geometry_msgs/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/sensor_msgs/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/camera_calibration_parsers/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rosconsole/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rosgraph_msgs/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/xmlrpcpp/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roscpp/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/message_filters/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/console_bridge/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/class_loader/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/catkin/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rospack/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roslib/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/pluginlib/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/image_transport/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /home/meg/catkin_ws/src/image_common/camera_info_manager/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/bond/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/smclib/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/bondcpp/package.xml
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/nodelet/package.xml
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_3)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o -c /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp
+CMakeFiles/camera_node.dir/src/uvc_cam.o: CMakeFiles/camera_node.dir/flags.make
+CMakeFiles/camera_node.dir/src/uvc_cam.o: ../src/uvc_cam.cpp
+CMakeFiles/camera_node.dir/src/uvc_cam.o: ../manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/roslang/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/roscpp/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/roslib/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/rostest/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/rosconsole/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/message_filters/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/rospy/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/bond/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/smclib/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/bondcpp/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/manifest.xml
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/bond/msg_gen/generated
+CMakeFiles/camera_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_3)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/camera_node.dir/src/uvc_cam.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/camera_node.dir/src/uvc_cam.o -c /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp
 
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/camera_node.dir/src/uvc_cam.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp > CMakeFiles/camera_node.dir/src/uvc_cam.cpp.i
+CMakeFiles/camera_node.dir/src/uvc_cam.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/camera_node.dir/src/uvc_cam.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp > CMakeFiles/camera_node.dir/src/uvc_cam.i
 
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/camera_node.dir/src/uvc_cam.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp -o CMakeFiles/camera_node.dir/src/uvc_cam.cpp.s
+CMakeFiles/camera_node.dir/src/uvc_cam.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/camera_node.dir/src/uvc_cam.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp -o CMakeFiles/camera_node.dir/src/uvc_cam.s
 
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.requires:
-.PHONY : CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.requires
+CMakeFiles/camera_node.dir/src/uvc_cam.o.requires:
+.PHONY : CMakeFiles/camera_node.dir/src/uvc_cam.o.requires
 
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.provides: CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.requires
-	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.provides.build
-.PHONY : CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.provides
+CMakeFiles/camera_node.dir/src/uvc_cam.o.provides: CMakeFiles/camera_node.dir/src/uvc_cam.o.requires
+	$(MAKE) -f CMakeFiles/camera_node.dir/build.make CMakeFiles/camera_node.dir/src/uvc_cam.o.provides.build
+.PHONY : CMakeFiles/camera_node.dir/src/uvc_cam.o.provides
 
-CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.provides.build: CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o
+CMakeFiles/camera_node.dir/src/uvc_cam.o.provides.build: CMakeFiles/camera_node.dir/src/uvc_cam.o
 
 # Object files for target camera_node
 camera_node_OBJECTS = \
-"CMakeFiles/camera_node.dir/src/camera_node.cpp.o" \
-"CMakeFiles/camera_node.dir/src/camera.cpp.o" \
-"CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o"
+"CMakeFiles/camera_node.dir/src/camera_node.o" \
+"CMakeFiles/camera_node.dir/src/camera.o" \
+"CMakeFiles/camera_node.dir/src/uvc_cam.o"
 
 # External object files for target camera_node
 camera_node_EXTERNAL_OBJECTS =
 
-../bin/camera_node: CMakeFiles/camera_node.dir/src/camera_node.cpp.o
-../bin/camera_node: CMakeFiles/camera_node.dir/src/camera.cpp.o
-../bin/camera_node: CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o
+../bin/camera_node: CMakeFiles/camera_node.dir/src/camera_node.o
+../bin/camera_node: CMakeFiles/camera_node.dir/src/camera.o
+../bin/camera_node: CMakeFiles/camera_node.dir/src/uvc_cam.o
 ../bin/camera_node: CMakeFiles/camera_node.dir/build.make
 ../bin/camera_node: CMakeFiles/camera_node.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking CXX executable ../bin/camera_node"
@@ -226,9 +205,9 @@ camera_node_EXTERNAL_OBJECTS =
 CMakeFiles/camera_node.dir/build: ../bin/camera_node
 .PHONY : CMakeFiles/camera_node.dir/build
 
-CMakeFiles/camera_node.dir/requires: CMakeFiles/camera_node.dir/src/camera_node.cpp.o.requires
-CMakeFiles/camera_node.dir/requires: CMakeFiles/camera_node.dir/src/camera.cpp.o.requires
-CMakeFiles/camera_node.dir/requires: CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o.requires
+CMakeFiles/camera_node.dir/requires: CMakeFiles/camera_node.dir/src/camera_node.o.requires
+CMakeFiles/camera_node.dir/requires: CMakeFiles/camera_node.dir/src/camera.o.requires
+CMakeFiles/camera_node.dir/requires: CMakeFiles/camera_node.dir/src/uvc_cam.o.requires
 .PHONY : CMakeFiles/camera_node.dir/requires
 
 CMakeFiles/camera_node.dir/clean:
@@ -236,6 +215,6 @@ CMakeFiles/camera_node.dir/clean:
 .PHONY : CMakeFiles/camera_node.dir/clean
 
 CMakeFiles/camera_node.dir/depend:
-	cd /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/camera_node.dir/depend
 

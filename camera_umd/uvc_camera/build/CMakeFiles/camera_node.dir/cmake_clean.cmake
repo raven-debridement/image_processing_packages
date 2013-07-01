@@ -1,7 +1,7 @@
 FILE(REMOVE_RECURSE
-  "CMakeFiles/camera_node.dir/src/camera_node.cpp.o"
-  "CMakeFiles/camera_node.dir/src/camera.cpp.o"
-  "CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o"
+  "CMakeFiles/camera_node.dir/src/camera_node.o"
+  "CMakeFiles/camera_node.dir/src/camera.o"
+  "CMakeFiles/camera_node.dir/src/uvc_cam.o"
   "../bin/camera_node.pdb"
   "../bin/camera_node"
 )

@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+
+import roslib
+import settings as s #use ids_to_robot dictionary [int: string]
+roslib.load_manifest('raven_pose_estimator')
+import rospy
+import tf
+from ar_pose.msg import ARMarker
+from ar_pose.msg import ARMarkers
+from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Quaternion
+from raven_2_msgs.msg import RavenState
+from raven_2_msgs.msg import ArmState
+from raven_2_msgs.msg import JointState
+from raven_2_msgs.msg import Constants
+
+class StateEstimator:
+    def __init__(self):
+        self.joint_pose_subscriber = rospy.Subscriber("joints_and_poses", ARMarkers, self.return_pose_estimate)
+	self.raven_state_publisher = rospy.Publisher("raven_state", RavenState)
+
+    def return_pose_estimate(self, data):
+	r = RavenState()
+	for marker in data.markers:
+	    
+	    	
+
+def main()
+    rospy.init_node('ar_robot_state')
+    s = StateEstimator()
+    rospy.spin()    
+
+if __name__='__main__':
+    main()

@@ -31,14 +31,14 @@ CMAKE_COMMAND = /usr/bin/cmake
 # The command to remove a file.
 RM = /usr/bin/cmake -E remove -f
 
-# Escaping for special characters.
-EQUALS = =
+# The program to use to edit the cache.
+CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera
+CMAKE_SOURCE_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build
+CMAKE_BINARY_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/stereo_node.dir/depend.make
@@ -49,174 +49,153 @@ include CMakeFiles/stereo_node.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/stereo_node.dir/flags.make
 
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: CMakeFiles/stereo_node.dir/flags.make
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: ../src/stereo_node.cpp
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: ../manifest.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/cpp_common/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/rostime/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/roscpp_traits/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/roscpp_serialization/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/genmsg/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/genpy/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/message_runtime/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/std_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/geometry_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/sensor_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/camera_calibration_parsers/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/rosconsole/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/rosgraph_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/xmlrpcpp/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/roscpp/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/message_filters/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/console_bridge/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/class_loader/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/catkin/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/rospack/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/roslib/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/pluginlib/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/image_transport/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /home/meg/catkin_ws/src/image_common/camera_info_manager/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/bond/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/smclib/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/bondcpp/package.xml
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o: /opt/ros/groovy/share/nodelet/package.xml
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_1)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o -c /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/stereo_node.cpp
+CMakeFiles/stereo_node.dir/src/stereo_node.o: CMakeFiles/stereo_node.dir/flags.make
+CMakeFiles/stereo_node.dir/src/stereo_node.o: ../src/stereo_node.cpp
+CMakeFiles/stereo_node.dir/src/stereo_node.o: ../manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/roslang/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/roscpp/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/roslib/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/rostest/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/rosconsole/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/message_filters/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/share/rospy/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/bond_core/bond/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/bond_core/smclib/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/bond_core/bondcpp/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/bond_core/bond/msg_gen/generated
+CMakeFiles/stereo_node.dir/src/stereo_node.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_1)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/stereo_node.dir/src/stereo_node.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/stereo_node.dir/src/stereo_node.o -c /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/stereo_node.cpp
 
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stereo_node.dir/src/stereo_node.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/stereo_node.cpp > CMakeFiles/stereo_node.dir/src/stereo_node.cpp.i
+CMakeFiles/stereo_node.dir/src/stereo_node.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stereo_node.dir/src/stereo_node.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/stereo_node.cpp > CMakeFiles/stereo_node.dir/src/stereo_node.i
 
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stereo_node.dir/src/stereo_node.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/stereo_node.cpp -o CMakeFiles/stereo_node.dir/src/stereo_node.cpp.s
+CMakeFiles/stereo_node.dir/src/stereo_node.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stereo_node.dir/src/stereo_node.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/stereo_node.cpp -o CMakeFiles/stereo_node.dir/src/stereo_node.s
 
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.requires:
-.PHONY : CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.requires
+CMakeFiles/stereo_node.dir/src/stereo_node.o.requires:
+.PHONY : CMakeFiles/stereo_node.dir/src/stereo_node.o.requires
 
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.provides: CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.requires
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.provides.build
-.PHONY : CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.provides
+CMakeFiles/stereo_node.dir/src/stereo_node.o.provides: CMakeFiles/stereo_node.dir/src/stereo_node.o.requires
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo_node.o.provides.build
+.PHONY : CMakeFiles/stereo_node.dir/src/stereo_node.o.provides
 
-CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.provides.build: CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o
+CMakeFiles/stereo_node.dir/src/stereo_node.o.provides.build: CMakeFiles/stereo_node.dir/src/stereo_node.o
 
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: CMakeFiles/stereo_node.dir/flags.make
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: ../src/stereo.cpp
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: ../manifest.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/cpp_common/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/rostime/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/roscpp_traits/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/roscpp_serialization/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/genmsg/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/genpy/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/message_runtime/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/std_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/geometry_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/sensor_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/camera_calibration_parsers/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/rosconsole/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/rosgraph_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/xmlrpcpp/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/roscpp/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/message_filters/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/console_bridge/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/class_loader/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/catkin/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/rospack/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/roslib/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/pluginlib/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/image_transport/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /home/meg/catkin_ws/src/image_common/camera_info_manager/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/bond/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/smclib/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/bondcpp/package.xml
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o: /opt/ros/groovy/share/nodelet/package.xml
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_2)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/stereo_node.dir/src/stereo.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/stereo_node.dir/src/stereo.cpp.o -c /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/stereo.cpp
+CMakeFiles/stereo_node.dir/src/stereo.o: CMakeFiles/stereo_node.dir/flags.make
+CMakeFiles/stereo_node.dir/src/stereo.o: ../src/stereo.cpp
+CMakeFiles/stereo_node.dir/src/stereo.o: ../manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/roslang/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/roscpp/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/roslib/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/rostest/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/rosconsole/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/message_filters/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/share/rospy/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/bond_core/bond/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/bond_core/smclib/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/bond_core/bondcpp/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/manifest.xml
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/bond_core/bond/msg_gen/generated
+CMakeFiles/stereo_node.dir/src/stereo.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_2)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/stereo_node.dir/src/stereo.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/stereo_node.dir/src/stereo.o -c /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/stereo.cpp
 
-CMakeFiles/stereo_node.dir/src/stereo.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stereo_node.dir/src/stereo.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/stereo.cpp > CMakeFiles/stereo_node.dir/src/stereo.cpp.i
+CMakeFiles/stereo_node.dir/src/stereo.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stereo_node.dir/src/stereo.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/stereo.cpp > CMakeFiles/stereo_node.dir/src/stereo.i
 
-CMakeFiles/stereo_node.dir/src/stereo.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stereo_node.dir/src/stereo.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/stereo.cpp -o CMakeFiles/stereo_node.dir/src/stereo.cpp.s
+CMakeFiles/stereo_node.dir/src/stereo.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stereo_node.dir/src/stereo.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/stereo.cpp -o CMakeFiles/stereo_node.dir/src/stereo.s
 
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o.requires:
-.PHONY : CMakeFiles/stereo_node.dir/src/stereo.cpp.o.requires
+CMakeFiles/stereo_node.dir/src/stereo.o.requires:
+.PHONY : CMakeFiles/stereo_node.dir/src/stereo.o.requires
 
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o.provides: CMakeFiles/stereo_node.dir/src/stereo.cpp.o.requires
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.cpp.o.provides.build
-.PHONY : CMakeFiles/stereo_node.dir/src/stereo.cpp.o.provides
+CMakeFiles/stereo_node.dir/src/stereo.o.provides: CMakeFiles/stereo_node.dir/src/stereo.o.requires
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/stereo.o.provides.build
+.PHONY : CMakeFiles/stereo_node.dir/src/stereo.o.provides
 
-CMakeFiles/stereo_node.dir/src/stereo.cpp.o.provides.build: CMakeFiles/stereo_node.dir/src/stereo.cpp.o
+CMakeFiles/stereo_node.dir/src/stereo.o.provides.build: CMakeFiles/stereo_node.dir/src/stereo.o
 
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: CMakeFiles/stereo_node.dir/flags.make
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: ../src/uvc_cam.cpp
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: ../manifest.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/cpp_common/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rostime/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roscpp_traits/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roscpp_serialization/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/genmsg/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/genpy/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/message_runtime/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/std_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/geometry_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/sensor_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/camera_calibration_parsers/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rosconsole/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rosgraph_msgs/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/xmlrpcpp/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roscpp/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/message_filters/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/console_bridge/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/class_loader/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/catkin/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/rospack/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/roslib/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/pluginlib/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/image_transport/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /home/meg/catkin_ws/src/image_common/camera_info_manager/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/bond/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/smclib/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/bondcpp/package.xml
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o: /opt/ros/groovy/share/nodelet/package.xml
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_3)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o -c /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: CMakeFiles/stereo_node.dir/flags.make
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: ../src/uvc_cam.cpp
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: ../manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/geometry_msgs/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/sensor_msgs/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/roslang/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/roscpp/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/common_rosdeps/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/image_common/camera_calibration_parsers/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/roslib/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/rostest/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/image_common/camera_info_manager/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/ros/core/rosbuild/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/rosconsole/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/pluginlib/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/message_filters/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/image_common/image_transport/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/share/rospy/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/bond/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/smclib/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/bondcpp/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/manifest.xml
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/bond_core/bond/msg_gen/generated
+CMakeFiles/stereo_node.dir/src/uvc_cam.o: /opt/ros/fuerte/stacks/nodelet_core/nodelet/srv_gen/generated
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles $(CMAKE_PROGRESS_3)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/stereo_node.dir/src/uvc_cam.o"
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -o CMakeFiles/stereo_node.dir/src/uvc_cam.o -c /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp
 
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp > CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.i
+CMakeFiles/stereo_node.dir/src/uvc_cam.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stereo_node.dir/src/uvc_cam.i"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -E /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp > CMakeFiles/stereo_node.dir/src/uvc_cam.i
 
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp -o CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.s
+CMakeFiles/stereo_node.dir/src/uvc_cam.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stereo_node.dir/src/uvc_cam.s"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -W -Wall -Wno-unused-parameter -fno-strict-aliasing -pthread -S /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp -o CMakeFiles/stereo_node.dir/src/uvc_cam.s
 
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.requires:
-.PHONY : CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.requires
+CMakeFiles/stereo_node.dir/src/uvc_cam.o.requires:
+.PHONY : CMakeFiles/stereo_node.dir/src/uvc_cam.o.requires
 
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.provides: CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.requires
-	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.provides.build
-.PHONY : CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.provides
+CMakeFiles/stereo_node.dir/src/uvc_cam.o.provides: CMakeFiles/stereo_node.dir/src/uvc_cam.o.requires
+	$(MAKE) -f CMakeFiles/stereo_node.dir/build.make CMakeFiles/stereo_node.dir/src/uvc_cam.o.provides.build
+.PHONY : CMakeFiles/stereo_node.dir/src/uvc_cam.o.provides
 
-CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.provides.build: CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o
+CMakeFiles/stereo_node.dir/src/uvc_cam.o.provides.build: CMakeFiles/stereo_node.dir/src/uvc_cam.o
 
 # Object files for target stereo_node
 stereo_node_OBJECTS = \
-"CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o" \
-"CMakeFiles/stereo_node.dir/src/stereo.cpp.o" \
-"CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o"
+"CMakeFiles/stereo_node.dir/src/stereo_node.o" \
+"CMakeFiles/stereo_node.dir/src/stereo.o" \
+"CMakeFiles/stereo_node.dir/src/uvc_cam.o"
 
 # External object files for target stereo_node
 stereo_node_EXTERNAL_OBJECTS =
 
-../bin/stereo_node: CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o
-../bin/stereo_node: CMakeFiles/stereo_node.dir/src/stereo.cpp.o
-../bin/stereo_node: CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o
+../bin/stereo_node: CMakeFiles/stereo_node.dir/src/stereo_node.o
+../bin/stereo_node: CMakeFiles/stereo_node.dir/src/stereo.o
+../bin/stereo_node: CMakeFiles/stereo_node.dir/src/uvc_cam.o
 ../bin/stereo_node: CMakeFiles/stereo_node.dir/build.make
 ../bin/stereo_node: CMakeFiles/stereo_node.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --red --bold "Linking CXX executable ../bin/stereo_node"
@@ -226,9 +205,9 @@ stereo_node_EXTERNAL_OBJECTS =
 CMakeFiles/stereo_node.dir/build: ../bin/stereo_node
 .PHONY : CMakeFiles/stereo_node.dir/build
 
-CMakeFiles/stereo_node.dir/requires: CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o.requires
-CMakeFiles/stereo_node.dir/requires: CMakeFiles/stereo_node.dir/src/stereo.cpp.o.requires
-CMakeFiles/stereo_node.dir/requires: CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o.requires
+CMakeFiles/stereo_node.dir/requires: CMakeFiles/stereo_node.dir/src/stereo_node.o.requires
+CMakeFiles/stereo_node.dir/requires: CMakeFiles/stereo_node.dir/src/stereo.o.requires
+CMakeFiles/stereo_node.dir/requires: CMakeFiles/stereo_node.dir/src/uvc_cam.o.requires
 .PHONY : CMakeFiles/stereo_node.dir/requires
 
 CMakeFiles/stereo_node.dir/clean:
@@ -236,6 +215,6 @@ CMakeFiles/stereo_node.dir/clean:
 .PHONY : CMakeFiles/stereo_node.dir/clean
 
 CMakeFiles/stereo_node.dir/depend:
-	cd /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/stereo_node.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/stereo_node.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/stereo_node.dir/depend
 

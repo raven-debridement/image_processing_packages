@@ -4,9 +4,9 @@ SET(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 SET(CMAKE_DEPENDS_CHECK_CXX
-  "/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp" "/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/src/camera.cpp.o"
-  "/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp" "/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/src/camera_node.cpp.o"
-  "/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp" "/home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/src/uvc_cam.cpp.o"
+  "/home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera.cpp" "/home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/src/camera.o"
+  "/home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/camera_node.cpp" "/home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/src/camera_node.o"
+  "/home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/src/uvc_cam.cpp" "/home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/camera_node.dir/src/uvc_cam.o"
   )
 SET(CMAKE_CXX_COMPILER_ID "GNU")
 
@@ -18,12 +18,3 @@ SET(CMAKE_TARGET_DEFINITIONS
 # Targets to which this target links.
 SET(CMAKE_TARGET_LINKED_INFO_FILES
   )
-
-# The include file search paths:
-SET(CMAKE_C_TARGET_INCLUDE_PATH
-  "../include"
-  "/opt/ros/groovy/include"
-  )
-SET(CMAKE_CXX_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})
-SET(CMAKE_Fortran_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})
-SET(CMAKE_ASM_TARGET_INCLUDE_PATH ${CMAKE_C_TARGET_INCLUDE_PATH})

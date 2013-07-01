@@ -1,7 +1,7 @@
 FILE(REMOVE_RECURSE
-  "CMakeFiles/stereo_node.dir/src/stereo_node.cpp.o"
-  "CMakeFiles/stereo_node.dir/src/stereo.cpp.o"
-  "CMakeFiles/stereo_node.dir/src/uvc_cam.cpp.o"
+  "CMakeFiles/stereo_node.dir/src/stereo_node.o"
+  "CMakeFiles/stereo_node.dir/src/stereo.o"
+  "CMakeFiles/stereo_node.dir/src/uvc_cam.o"
   "../bin/stereo_node.pdb"
   "../bin/stereo_node"
 )

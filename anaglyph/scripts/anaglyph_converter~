@@ -11,7 +11,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 class image_converter:
 
-    def __init__(self, publish_topic, left_image_topic, right_image_topic):
+    def __init__(self, publish_topic, left_image_topic, right_image_topic, crop):
         self.image_pub = rospy.Publisher(publish_topic,Image)
 
         #cv.NamedWindow("Image window", 1)
@@ -21,6 +21,7 @@ class image_converter:
 	self.left = False
 	self.right = False
 	self.out = False
+	self.crop = crop
 
     def left_callback(self,data):
         try:
@@ -39,8 +40,13 @@ class image_converter:
     def process(self):
 	if self.left!=False and self.right!=False:
 	    channels = []
-	    for i in range(6):
+	    c = int(self.crop)/2
+	    self.left = self.left[0:self.left.height, c:self.left.width]
+	    self.right = self.right[0:self.right.height, 0:self.right.width-c]
+	    for i in range(3):
 		channels.append(cv.CreateImage(cv.GetSize(self.left),8,1))
+	    for i in range(3):
+		channels.append(cv.CreateImage(cv.GetSize(self.right),8,1))
 	    cv.Split(self.left, channels[0], channels[1], channels[2], None)
   	    cv.Split(self.right, channels[3], channels[4], channels[5], None)
 	    merge = cv.CreateImage(cv.GetSize(self.left), 8, 3)
@@ -57,8 +63,9 @@ class image_converter:
 def main(args):
     publish_topic = "anaglyph_images"
     left_image_topic = 'left_image_topic'
-    right_image_topic = 'left_image_topic' #rospy.get_param('~right_image_topic', "/right/image_raw")
-    ic = image_converter(publish_topic, left_image_topic, right_image_topic)
+    crop = '250'
+    right_image_topic = 'right_image_topic' #rospy.get_param('~right_image_topic', "/right/image_raw")
+    ic = image_converter(publish_topic, left_image_topic, right_image_topic, crop)
     rospy.init_node('image_converter', anonymous=True)
     try:
         rospy.spin()

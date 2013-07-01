@@ -31,14 +31,14 @@ CMAKE_COMMAND = /usr/bin/cmake
 # The command to remove a file.
 RM = /usr/bin/cmake -E remove -f
 
-# Escaping for special characters.
-EQUALS = =
+# The program to use to edit the cache.
+CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera
+CMAKE_SOURCE_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build
+CMAKE_BINARY_DIR = /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build
 
 # Utility rule file for test-future.
 
@@ -60,6 +60,6 @@ CMakeFiles/test-future.dir/clean:
 .PHONY : CMakeFiles/test-future.dir/clean
 
 CMakeFiles/test-future.dir/depend:
-	cd /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build /home/meg/catkin_ws/src/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/test-future.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build /home/jonathankim/fuerte_workspace/sandbox/image_processing_packages/camera_umd/uvc_camera/build/CMakeFiles/test-future.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/test-future.dir/depend
 

@@ -82,6 +82,7 @@ namespace ar_pose
     // **** subscribe
 
     ROS_INFO ("Subscribing to info topic");
+	ROS_INFO_STREAM (cameraInfoTopic_);
     sub_ = n_.subscribe (cameraInfoTopic_, 1, &ARMultiPublisher::camInfoCallback, this); //subscribes to camera info topic
     getCamInfo_ = false;
 
