@@ -25,7 +25,7 @@
                 args="--width $(arg width) --height $(arg height) --square $(arg square) --topic $(arg right_topic) --info $(arg right_camera_info) --image $(arg right_camera_image)"
                 output="screen"/>
 
-    <node name="pose_estimator" pkg="raven_pose_estimator" type="pose_estimator" output="screen">
+    <node name="chess_pose_estimator" pkg="raven_pose_estimator" type="pose_estimator" output="screen">
 		<remap from="left_poses" to="$(arg left_topic)" />
 	 	<remap from="right_poses" to="$(arg right_topic)" />
 		<remap from="marker_type" to="CHESS" />

@@ -1,12 +1,12 @@
 <!-- a general launch file that should work on most systems -->
 
 <launch>
-    <include file="$(find prosilica_camera)/launch/stereo.launch" />
- 
-    <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>
+    <!--<include file="$(find prosilica_camera)/launch/stereo.launch" />
+
+	<node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>
 
     <node pkg="tf" type="static_transform_publisher" name="camera_to_ground" args="0 0 0 0 0 0 ground camera 100" />
-    <node pkg="tf" type="static_transform_publisher" name="left_to_right" args="0.5 0 0 1 0 0 left_camera right_camera 100" />
+    <node pkg="tf" type="static_transform_publisher" name="left_to_right" args="0.5 0 0 1 0 0 left_camera right_camera 100" />-->
 
     <node name="left_ar_pose" pkg="ar_pose" type="ar_multi" respawn="false" output="screen">
 	 	<param name="image_topic" value="/left/image_rect_color" />

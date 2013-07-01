@@ -24,7 +24,7 @@
 		<param name="publish_topic" type="string" value="right_ar_markers" />
     </node>
 
-    <node name="pose_estimator" pkg="raven_pose_estimator" type="pose_estimator">
+    <node name="ar_pose_estimator" pkg="raven_pose_estimator" type="pose_estimator">
 		<remap from="left_ar_markers" to="left_poses" />
 		<remap from="right_ar_markers" to="right_poses" />
 		<remap from="marker_type" to="AR" />
