@@ -1,0 +1,11 @@
+<!-- testing the hsv calculate node -->
+<launch>
+	<include file="$(find prosilica_camera)/launch/generic.launch" />
+
+	<node ns="camera" pkg="image_proc" type="image_proc" name="image_proc"/>
+
+	<node pkg="stereo_click" type="hsv_calculator.py" name="click_window">
+		<param name="cam" value="/camera" />
+		<param name="output" value="hsv_values" />
+	</node>
+</launch>

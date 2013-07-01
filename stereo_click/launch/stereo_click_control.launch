@@ -10,10 +10,10 @@
 		<param name="output" value="clicks_narrow_stereo_right" />
 	</node>
 
-	<node pkg="stereo_click" type="stereo_converter.py" name="stereo_converter">
+	<node pkg="stereo_click" type="stereo_converter.py" name="stereo_converter" output="screen">
 		<param name="input1" value="clicks_narrow_stereo_left" />
 		<param name="input2" value="clicks_narrow_stereo_right" />
 		<param name="output" value="stereo_points_3d" />
-		<param name="output_frame" value="right_camera" />
+		<param name="output_frame" value="stereo_frame" />
 	</node>
 </launch>

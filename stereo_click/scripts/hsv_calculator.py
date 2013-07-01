@@ -40,17 +40,19 @@ class ClickWindow:
 		self.ch_x = 0
 		self.ch_y = 0
 		self.zoom = 1
+		self.image_width = 0;
+		self.image_height = 0;
 		self.offset = (0.0,0.0)
 		self.outputName = outputName
 		self.bridge = CvBridge()
 		self.create_window()
-		self.cameraTopic = "%s/image_rect_color"%cameraName
+		self.cameraTopic = "%s/image_raw"%cameraName
 		self.cameraInfoTopic = "%s/camera_info"%cameraName
 		self.camera_sub = rospy.Subscriber(self.cameraTopic,Image,self.update_background)
 		self.camera_info_sub = rospy.Subscriber(self.cameraInfoTopic,CameraInfo,self.update_camera_info)
 		
 		self.clear_serv = rospy.Service("%s/received"%self.outputName,EmptySrv,self.clear_request)
-		self.point_pub = rospy.Publisher(self.outputName,ClickPoint)
+		self.hsv_pub = rospy.Publisher(self.outputName,String)
 		self.set_background(cv.CreateImage((500,500),8,3))
 		self.set_listeners()
 	
@@ -73,6 +75,8 @@ class ClickWindow:
 		except CvBridgeError, e:
 			print e
 		self.set_background(cv_image)
+		self.image_width = data.width
+		self.image_height = data.height
 	
 	def update_camera_info(self,data):
 		self.set_camera_info(data)
@@ -92,7 +96,7 @@ class ClickWindow:
 	def onMouse(self,event,zoom_x,zoom_y,flags,param):
 		self.setCrosshairs(zoom_x,zoom_y)
 		(x,y) = self.unZoomPt(zoom_x,zoom_y)
-		
+			
 		if event == cv.CV_EVENT_LBUTTONUP:
 			print "Clicked on point (%d,%d)"%(x,y)
 			self.output_point(x,y)
@@ -130,12 +134,14 @@ class ClickWindow:
 	## Publishes the proper point and camera information to the given topic
 	#	@param (x,y) The (x,y) coordinates of the pixel, in the camera's view
 	def output_point(self,x,y):
-		cp = ClickPoint()
-		cp.x = x
-		cp.y = y
-		cp.camera_info = self.camera_info
-		self.cp = cp
-		self.point_pub.publish(cp)
+		rospy.loginfo("%d, %d"%(x,y))
+		hsv = String()
+		hsvImg = cv.CreateImage(cv.GetSize(self.background), 8, 3)
+        	cv.CvtColor(self.background, hsvImg, cv.CV_BGR2HSV)
+		rospy.loginfo("hsv width: %d, hsv height: %d"%(hsvImg.width, hsvImg.height))
+		a = cv.Get2D(hsvImg, int(y), int(x)) #FIXME
+		hsv.data = "Hue: %d, Saturation: %d, Value: %d"%(a[0], a[1], a[2]) 
+		self.hsv_pub.publish(hsv)
 	
 	##	The listener, which updates the camera feed and registers onMouse events	
 	def listen(self):
@@ -146,7 +152,7 @@ class ClickWindow:
 		cv.GetRectSubPix(bgimg,smallimg,(self.background.width/(2*self.zoom)+self.offset[0],self.background.height/(2*self.zoom)+self.offset[1]))
 		cv.Resize(smallimg,img)
 		if(self.cp != False):
-			cv.Circle(img,self.zoomPt(int(self.cp.x),int(self.cp.y)),3,cv.RGB(0,255,0),-1)
+			cv.Circle(img,self.zoomPt(self.cp.x,self.cp.y),3,cv.RGB(0,255,0),-1)
 
 		cv.Line(img,(self.ch_x-25,self.ch_y),(self.ch_x+25,self.ch_y),cv.RGB(255,255,0))
 		cv.Line(img,(self.ch_x,self.ch_y-25),(self.ch_x,self.ch_y+25),cv.RGB(255,255,0))
