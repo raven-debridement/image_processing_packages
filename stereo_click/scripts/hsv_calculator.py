@@ -46,7 +46,7 @@ class ClickWindow:
 		self.outputName = outputName
 		self.bridge = CvBridge()
 		self.create_window()
-		self.cameraTopic = "%s/image_raw"%cameraName
+		self.cameraTopic = "%s/image_color"%cameraName
 		self.cameraInfoTopic = "%s/camera_info"%cameraName
 		self.camera_sub = rospy.Subscriber(self.cameraTopic,Image,self.update_background)
 		self.camera_info_sub = rospy.Subscriber(self.cameraInfoTopic,CameraInfo,self.update_camera_info)
