@@ -20,6 +20,11 @@ import time
 import message_filters
 from threading import Lock
 
+import tf.transformations as tft
+import tfx
+
+import code
+
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
 class ColorSegmenter():
@@ -208,6 +213,41 @@ class ColorSegmenter():
 	    cv.Subtract(image, temp, temp)
 	    cv.Bitwise_Or("""
 
+    def get_orientation_from_lines(self, v0, v1):
+        """
+        v0 and v1 are vectors representing two lines
+        that are KNOWN to be in the same plane
+        """
+        # get into an np array
+        v0, v1 = np.array(v0), np.array(v1)
+
+        # normalize
+        v0 = v0 / np.linalg.norm(v0)
+        v1 = v1 / np.linalg.norm(v1)
+
+        # find normal
+        n = np.cross(v0, v1)
+
+        # stack into a matrix
+        rotMat = np.vstack((v0, v1, n)).T
+
+        # find the quaternion xyzw
+        tbRot = tfx.tb_angles(rotMat)
+        quat = tbRot.quaternion
+
+        #code.interact(local=locals())
+
+        return list(quat)
+
+def test_orientation():
+    rospy.init_node('orientation_from_lines',anonymous=True)
+    gs = ColorSegmenter('left','right')
+    
+    v0 = [1, 0, 0]
+    v1 = [0, 1, 0]
+    
+    gs.get_orientation_from_lines(v0, v1)
+
 
 def main():
     rospy.init_node('color_segmenter')
@@ -218,6 +258,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    #test()
-    #webcam()
+    #main()
+    test_orientation()
