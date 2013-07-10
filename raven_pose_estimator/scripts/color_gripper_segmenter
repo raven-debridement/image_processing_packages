@@ -180,7 +180,6 @@ class ColorSegmenter():
     def intersect_planes(self, plane1, plane2):
 	""" where a plane is the tuple (normal, point); returns unit vector corresponding to the intersection """
 	cross_product = np.cross(plane1[0], plane2[0])
-<<<<<<< HEAD
 	return 
 
     #considered running skeletonization on the image; but this would be a big performance hit
@@ -228,9 +227,6 @@ def test_orientation():
     
     gs.get_orientation_from_lines(v0, v1)
 
-=======
-	return cross_product
->>>>>>> da5069da5f03269a186ed2e337f22d79d2a64fbc
 
 def main():
     rospy.init_node('color_segmenter')
