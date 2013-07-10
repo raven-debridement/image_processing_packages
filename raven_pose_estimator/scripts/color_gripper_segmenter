@@ -77,8 +77,8 @@ class ColorSegmenter():
     def leftImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	left_thresh, left_edges, self.foundColorLeft, self.xyCloseLeft, self.xyCentroidLeft = self.process(image, "left")
-	#left_edges, self.foundColorLeft, left_lines = self.process(image, "left")
+	#left_thresh, left_edges, self.foundColorLeft, self.xyCloseLeft, self.xyCentroidLeft = self.process(image, "left")
+	left_edges, self.foundColorLeft, left_lines = self.process(image, "left")
 	self.handleBoth()
         #cv.ShowImage('Left Thresholded', left_thresh)
 	cv.ShowImage('Left Edges', left_edges)
@@ -87,8 +87,8 @@ class ColorSegmenter():
     def rightImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	right_thresh, right_edges, self.foundColorRight, self.xyCloseRight, self.xyCentroidRight = self.process(image, "right")
-	#right_edges, self.foundColorRight, right_lines = self.process(image, "right")
+	#right_thresh, right_edges, self.foundColorRight, self.xyCloseRight, self.xyCentroidRight = self.process(image, "right")
+	right_edges, self.foundColorRight, right_lines = self.process(image, "right")
 	self.handleBoth()
         #cv.ShowImage('Right Viewer', right_thresh)
 	cv.ShowImage('Right Edges', right_edges)
@@ -116,13 +116,19 @@ class ColorSegmenter():
         # these are the bounds for the color being filtered
         # currently, these work well for the color red
         # can be changed depending on the application
-        lowerHSV = cv.Scalar(0, 160, 160)
-        upperHSV = cv.Scalar(8, 255, 255)
-	#lowerHSV = cv.Scalar(100, 50, 140)
-        #upperHSV = cv.Scalar(120, 255, 255)
+        #lowerHSV = cv.Scalar(0, 160, 160)
+        #upperHSV = cv.Scalar(8, 255, 255)
+	lowerHSV = cv.Scalar(100, 50, 140)
+        upperHSV = cv.Scalar(120, 255, 255)
 	threshImg = self.threshold(cv_image, hsvImg, threshImg, lowerHSV, upperHSV)
-	(found, xClose, yClose, xCentroid, yCentroid) = self.find_centroid(threshImg)
-        return (threshImg, edges, found, (xClose, yClose), (xCentroid, yCentroid))
+	#(found, xClose, yClose, xCentroid, yCentroid) = self.find_centroid(threshImg)
+	(lines, edges) = self.find_lines(threshImg)
+	#print flag
+	#if lines != None:
+   	max_line = self.get_max_line(lines[0])
+	#    print max_line
+        #return (threshImg, edges, found, (xClose, yClose), (xCentroid, yCentroid))
+	return (edges, found, lines)
 
     def threshold(self, image, hsvImg, threshImg, lowerHSV, upperHSV):
 	cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
@@ -151,6 +157,57 @@ class ColorSegmenter():
             distFromCentroid = [((y-yCentroid)**2 + (x-xCentroid)**2)**.5 for y,x in yxCoords]
             yClose, xClose = yxCoords[distFromCentroid.index(min(distFromCentroid))]
 	    return (True, xClose, yClose, xCentroid, yCentroid)
+
+    def find_lines(self, image):	
+	edges = cv2.Canny(np.asarray(image[:,:]), 80, 120)
+	lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 10, 1)
+	return (lines, cv.fromarray(edges))
+
+    def distance(self, x1, y1, x2, y2):
+	return ((x2-x1)**2+(y2-y1)**2)**0.5
+
+    def get_max_line(self, lines):
+	lengths = []
+	for line in lines:
+	    lengths.append(self.distance(line[0], line[1], line[2], line[3]))
+	max_length = max(lengths)
+	i = lengths.index(max_length)
+	return lines[i]
+
+    def transform_vector(self, translation, rotation, vector):
+	""" takes in a transformation matrix and a vector """
+	
+	
+    def transform_to_world(self, line, camera, flag):
+	""" takes in a pixel line and transforms it to real-world coordinates based on camera info"""
+	if flag == "right":
+	    info = self.rightInfo
+	elif flag == "left":
+	    info = self.leftInfo
+	x1 = line[0]
+	y1 = line[1]
+	x2 = line[2]
+	y2 = line[3]
+	pinhole_model = image_geometry.PinholeCameraModel()
+	pinhole_model.fromcameraInfo(info)	
+	ray1 = pinhole_model.projectPixelTo3dRay(x1, y1)
+	ray2 = pinhole_model.projectPixelTo3dRay(x2, y2)
+	
+    def intersect_planes(self, plane1, plane2):
+	""" where a plane is the tuple (normal, point) """
+	cross_product = np.cross(plane1[0], plane2[0])
+	return 
+
+    #considered running skeletonization on the image; but this would be a big performance hit
+    """def skeletonize(self, image):
+	element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))
+	done = False
+	while not done:
+	    cv.Erode(image, eroded, element)
+	    cv.Dilate(eroded, temp, element)
+	    cv.Subtract(image, temp, temp)
+	    cv.Bitwise_Or("""
+
 
 def main():
     rospy.init_node('color_segmenter')
