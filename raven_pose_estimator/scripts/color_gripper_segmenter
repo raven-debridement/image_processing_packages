@@ -22,6 +22,64 @@ from threading import Lock
 
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
+TRANSLATION_R2L = () #FIXME stick in translation and rotation matrices
+ROTATION_R2L = ()
+
+###########################
+#     HELPER METHODS      #
+###########################
+def find_lines(image):
+    """ finds lines in a binary image using hough line transform, after running canny edge detection"""	
+    edges = cv2.Canny(np.asarray(image[:,:]), 80, 120)
+    lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 10, 1)
+    return (lines, cv.fromarray(edges))
+
+def distance(x1, y1, x2, y2):
+    return ((x2-x1)**2+(y2-y1)**2)**0.5
+
+def get_max_line(lines): #FIXME: we know want the top 4 lines, rather than just the longest line
+    lengths = []
+    for line in lines:
+	lengths.append(distance(line[0], line[1], line[2], line[3]))
+    max_length = max(lengths)
+    i = lengths.index(max_length)
+    return lines[i]
+
+def transform_plane(translation, rotation, plane):
+    """ takes in a transformation matrix and a plane """
+    result_plane = (rotate_vector(rotation, plane[0]), (plane[1][0]+translation[0], plane[1][1]+translation[1], plane[1][2]+translation[2]) #FIXME get the translation and rotation working properly
+    return result_plane
+
+def intersect_planes(plane1, plane2):
+    """ where a plane is the tuple (normal, point); returns unit vector corresponding to the intersection """
+    cross_product = np.cross(plane1[0], plane2[0])
+    return cross_product
+	
+def rotate_vector(yaw_pitch_roll, vector):
+    """ helper function to rotate a vector given yaw-pitch-roll values """
+    a = yaw_pitch_roll[0]
+    b = yaw_pitch_roll[1]
+    c = yaw_pitch_roll[2]
+    rot_matrix = np.array([math.cos(a)*math.cos(b), math.cos(a)*math.sin(b)*math.sin(c)-math.sin(a)*math.cos(c), math.cos(a)*math.sin(b)*math.cos(c)+math.sin(a)*math.sin(c), math.sin(a)*math.cos(b), math.sin(a)*math.sin(b)*math.sin(c)+math.cos(a)*math.cos(c), math.sin(a)*math.sin(b)*math.cos(c)-math.cos(a)*math.sin(c), -math.sin(b), math.cos(b)*math.sin(c), math.cos(b)*math.cos(c)])
+    rot_matrix.reshape((3,3))
+    result = rot_matrix*vector
+    return result
+
+def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
+    """ thresholds an image for a certain range of hsv values """
+    cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
+    cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
+    cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
+    cv.Erode(threshImg, threshImg, None, 1)
+    cv.Dilate(threshImg, threshImg, None, 1)
+    cv.Erode(threshImg, threshImg, None, 1)
+    cv.Dilate(threshImg, threshImg, None, 1)
+    return threshImg
+
+##################
+#   MAIN CLASS   #
+##################
+
 class ColorSegmenter():
     def __init__(self, left_camera, right_camera):
         
@@ -95,12 +153,12 @@ class ColorSegmenter():
     def handleBoth(self):
 	""" returns the unit vector corresponding to the orientation of the colored tape """
 	if self.foundColorLeft and self.foundColorRight:
-	    longest_left = self.get_max_line(self.left_lines)
-	    longest_right = self.get_max_line(self.right_lines)
+	    longest_left = get_max_line(self.left_lines)
+	    longest_right = get_max_line(self.right_lines)
 	    left_plane = self.transform_to_world(longest_left, "left")
 	    right_plane = self.transform_to_world(longest_right, "right")
-	    transformed_plane = self.transform_plane(translation_r2l, rotation_r2l, right_plane) #FIXME stick in translation and rotation matrices
-	    unit_vector = self.intersect_planes(left_plane, right_plane)
+	    transformed_plane = transform_plane(TRANSLATION_R2L, ROTATION_R2L, right_plane) 
+	    unit_vector = intersect_planes(left_plane, right_plane)
 	    
     def process(self, image, flag):
 	"""
@@ -116,45 +174,12 @@ class ColorSegmenter():
 	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")	
 	lowerHSV = cv.Scalar(100, 50, 140)
         upperHSV = cv.Scalar(120, 255, 255)
-	threshImg = self.threshold(cv_image, hsvImg, threshImg, lowerHSV, upperHSV)
-	(lines, edges) = self.find_lines(threshImg)
+	threshImg = threshold(cv_image, hsvImg, threshImg, lowerHSV, upperHSV)
+	(lines, edges) = find_lines(threshImg)
 	if lines != None:
-   	    max_line = self.get_max_line(lines[0])
+   	    max_line = get_max_line(lines[0])
 	return (edges, found, lines)
 
-    def threshold(self, image, hsvImg, threshImg, lowerHSV, upperHSV):
-	""" thresholds an image for a certain range of hsv values """
-	cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
-	cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
-	cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
-	cv.Erode(threshImg, threshImg, None, 1)
-        cv.Dilate(threshImg, threshImg, None, 1)
-	cv.Erode(threshImg, threshImg, None, 1)
-	cv.Dilate(threshImg, threshImg, None, 1)
-	return threshImg
-
-    def find_lines(self, image):
-	""" finds lines in a binary image using hough line transform, after running canny edge detection"""	
-	edges = cv2.Canny(np.asarray(image[:,:]), 80, 120)
-	lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 10, 1)
-	return (lines, cv.fromarray(edges))
-
-    def distance(self, x1, y1, x2, y2):
-	return ((x2-x1)**2+(y2-y1)**2)**0.5
-
-    def get_max_line(self, lines): #FIXME: we know want the top 4 lines, rather than just the longest line
-	lengths = []
-	for line in lines:
-	    lengths.append(self.distance(line[0], line[1], line[2], line[3]))
-	max_length = max(lengths)
-	i = lengths.index(max_length)
-	return lines[i]
-
-    def transform_plane(self, translation, rotation, plane):
-	""" takes in a transformation matrix and a plane """
-	result_plane = (plane[0]*rotation, plane[1]+translation) #FIXME get the translation and rotation working properly
-	return result_plane
-	
     def transform_to_world(self, line, flag):
 	""" takes in a pixel line as defined by two endpoints and transforms it to real-world coordinates based on camera info"""
 	if flag == "right":
@@ -171,11 +196,6 @@ class ColorSegmenter():
 	ray2 = pinhole_model.projectPixelTo3dRay(x2, y2)
 	plane_normal = np.cross(ray1, ray2) #FIXME not sure what the output type of projectPixelTo3dRay is
 	return (plane_normal, (0,0,0))
-	
-    def intersect_planes(self, plane1, plane2):
-	""" where a plane is the tuple (normal, point); returns unit vector corresponding to the intersection """
-	cross_product = np.cross(plane1[0], plane2[0])
-	return cross_product
 
 def main():
     rospy.init_node('color_segmenter')
