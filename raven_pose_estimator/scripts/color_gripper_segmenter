@@ -82,30 +82,31 @@ class ColorSegmenter():
     def leftImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	#left_thresh, left_edges, self.foundColorLeft, self.xyCloseLeft, self.xyCentroidLeft = self.process(image, "left")
-	left_edges, self.foundColorLeft, left_lines = self.process(image, "left")
+	left_edges, self.foundColorLeft, self.left_lines = self.process(image, "left")
 	self.handleBoth()
         #cv.ShowImage('Left Thresholded', left_thresh)
-	cv.ShowImage('Left Edges', left_edges)
-        cv.WaitKey(3)
+	#cv.ShowImage('Left Edges', left_edges)
+        #cv.WaitKey(3)
 
     def rightImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	#right_thresh, right_edges, self.foundColorRight, self.xyCloseRight, self.xyCentroidRight = self.process(image, "right")
-	right_edges, self.foundColorRight, right_lines = self.process(image, "right")
+	right_edges, self.foundColorRight, self.right_lines = self.process(image, "right")
 	self.handleBoth()
         #cv.ShowImage('Right Viewer', right_thresh)
-	cv.ShowImage('Right Edges', right_edges)
-        cv.WaitKey(3)
+	#cv.ShowImage('Right Edges', right_edges)
+        #cv.WaitKey(3)
 
     def handleBoth(self):
-	""" returns the point in 3D space of the closest pixel of color """
+	""" returns the unit vector corresponding to the orientation of the colored tape """
 	if self.foundColorLeft and self.foundColorRight:
-	    u, v = self.xyCloseLeft
-	    disparity = self.xyCloseLeft[0] - self.xyCloseRight[0]
-	    self.pointpub.publish(self.convertStereo(u, v, disparity))
-
+	    longest_left = self.get_max_line(self.left_lines)
+	    longest_right = self.get_max_line(self.right_lines)
+	    left_plane = self.transform_to_world(longest_left, "left")
+	    right_plane = self.transform_to_world(longest_right, "right")
+	    transformed_plane = self.transform_plane(translation_r2l, rotation_r2l, right_plane) #FIXME stick in translation and rotation matrices
+	    unit_vector = self.intersect_planes(left_plane, right_plane)
+	    
     def process(self, image, flag):
 	"""
 	thresholds the image for a certain hsv range and returns the coordinates of the centroid, 
@@ -117,25 +118,17 @@ class ColorSegmenter():
 	elif flag=="left":
 	    hsvImg = self.rightHsvImg	
 	    threshImg = self.rightThreshImg
-	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")	       
-        # these are the bounds for the color being filtered
-        # currently, these work well for the color red
-        # can be changed depending on the application
-        #lowerHSV = cv.Scalar(0, 160, 160)
-        #upperHSV = cv.Scalar(8, 255, 255)
+	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")	
 	lowerHSV = cv.Scalar(100, 50, 140)
         upperHSV = cv.Scalar(120, 255, 255)
 	threshImg = self.threshold(cv_image, hsvImg, threshImg, lowerHSV, upperHSV)
-	#(found, xClose, yClose, xCentroid, yCentroid) = self.find_centroid(threshImg)
 	(lines, edges) = self.find_lines(threshImg)
-	#print flag
-	#if lines != None:
-   	max_line = self.get_max_line(lines[0])
-	#    print max_line
-        #return (threshImg, edges, found, (xClose, yClose), (xCentroid, yCentroid))
+	if lines != None:
+   	    max_line = self.get_max_line(lines[0])
 	return (edges, found, lines)
 
     def threshold(self, image, hsvImg, threshImg, lowerHSV, upperHSV):
+	""" thresholds an image for a certain range of hsv values """
 	cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
 	cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
 	cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
@@ -145,25 +138,8 @@ class ColorSegmenter():
 	cv.Dilate(threshImg, threshImg, None, 1)
 	return threshImg
 
-    def find_centroid(self, threshImg):
-	mat = cv.GetMat(threshImg)
-        yxCoords = []
-        for x in range(mat.width):
-            for y in range(mat.height):
-                if mat[y,x] > 0.0:
-                    yxCoords.append((y,x))
-        # check if any color is present
-        if len(yxCoords) == 0:
-            return (False,0,0,0,0)
-	else:                
-            yCentroid = sum([y for y,x in yxCoords])/len(yxCoords)
-            xCentroid = sum([x for y,x in yxCoords])/len(yxCoords)        
-            # find nearest color pixel to centroid (based on euclidean distance)
-            distFromCentroid = [((y-yCentroid)**2 + (x-xCentroid)**2)**.5 for y,x in yxCoords]
-            yClose, xClose = yxCoords[distFromCentroid.index(min(distFromCentroid))]
-	    return (True, xClose, yClose, xCentroid, yCentroid)
-
-    def find_lines(self, image):	
+    def find_lines(self, image):
+	""" finds lines in a binary image using hough line transform, after running canny edge detection"""	
 	edges = cv2.Canny(np.asarray(image[:,:]), 80, 120)
 	lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 10, 1)
 	return (lines, cv.fromarray(edges))
@@ -171,7 +147,7 @@ class ColorSegmenter():
     def distance(self, x1, y1, x2, y2):
 	return ((x2-x1)**2+(y2-y1)**2)**0.5
 
-    def get_max_line(self, lines):
+    def get_max_line(self, lines): #FIXME: we know want the top 4 lines, rather than just the longest line
 	lengths = []
 	for line in lines:
 	    lengths.append(self.distance(line[0], line[1], line[2], line[3]))
@@ -179,12 +155,13 @@ class ColorSegmenter():
 	i = lengths.index(max_length)
 	return lines[i]
 
-    def transform_vector(self, translation, rotation, vector):
-	""" takes in a transformation matrix and a vector """
+    def transform_plane(self, translation, rotation, plane):
+	""" takes in a transformation matrix and a plane """
+	result_plane = (plane[0]*rotation, plane[1]+translation) #FIXME get the translation and rotation working properly
+	return result_plane
 	
-	
-    def transform_to_world(self, line, camera, flag):
-	""" takes in a pixel line and transforms it to real-world coordinates based on camera info"""
+    def transform_to_world(self, line, flag):
+	""" takes in a pixel line as defined by two endpoints and transforms it to real-world coordinates based on camera info"""
 	if flag == "right":
 	    info = self.rightInfo
 	elif flag == "left":
@@ -197,10 +174,13 @@ class ColorSegmenter():
 	pinhole_model.fromcameraInfo(info)	
 	ray1 = pinhole_model.projectPixelTo3dRay(x1, y1)
 	ray2 = pinhole_model.projectPixelTo3dRay(x2, y2)
+	plane_normal = np.cross(ray1, ray2) #FIXME not sure what the output type of projectPixelTo3dRay is
+	return (plane_normal, (0,0,0))
 	
     def intersect_planes(self, plane1, plane2):
-	""" where a plane is the tuple (normal, point) """
+	""" where a plane is the tuple (normal, point); returns unit vector corresponding to the intersection """
 	cross_product = np.cross(plane1[0], plane2[0])
+<<<<<<< HEAD
 	return 
 
     #considered running skeletonization on the image; but this would be a big performance hit
@@ -248,6 +228,9 @@ def test_orientation():
     
     gs.get_orientation_from_lines(v0, v1)
 
+=======
+	return cross_product
+>>>>>>> da5069da5f03269a186ed2e337f22d79d2a64fbc
 
 def main():
     rospy.init_node('color_segmenter')
