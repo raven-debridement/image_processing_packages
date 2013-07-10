@@ -4,8 +4,7 @@
     <node name="stereo_image_processing" pkg="stereo_image_proc" type="stereo_image_proc" />
 
 
-    <arg name="shift" default="250"/>
-    <node name="converter" pkg="anaglyph" type="anaglyph_converter" args="--shift $(arg shift)">
+    <node name="converter" pkg="anaglyph" type="anaglyph_converter" output="screen">
         <remap from="left_image_topic" to="/left/image_color" />
         <remap from="right_image_topic" to="/right/image_color" />
     	<param name="publish_topic" value="anaglyph_images"/>

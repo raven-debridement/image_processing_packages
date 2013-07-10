@@ -7,11 +7,11 @@ import rospy
 
 import cv
 import cv2
-import numpy
+import numpy as np
 import math
 from std_msgs.msg import String
 from sensor_msgs.msg import Image, CameraInfo
-from cv_bridge import CvBridge, CvBridgeError
+import cv_bridge
 from geometry_msgs.msg import Point, PointStamped
 import tf
 import image_geometry
@@ -28,10 +28,10 @@ class GripperSegmenter():
 
         self.foundColorLeft = False
         self.foundColorRight = False
-
+	
         self.listener = tf.TransformListener()
-        self.outputFrame = 'base_link'        
-        self.bridge = CvBridge()
+	self.bridge = cv_bridge.CvBridge()
+        self.outputFrame = 'base_link'
         rospy.Subscriber('%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
         rospy.Subscriber('%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
         rospy.Subscriber('%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
@@ -61,16 +61,28 @@ class GripperSegmenter():
         self.rightInfo = info
 
     def leftImageCallback(self, image):
-        colorImg, self.foundColorLeft, self.xyCloseLeft, self.xyCentroidLeft = self.process(image)
-        #cv.ShowImage('Left Viewer', colorImg)
-        #cv.WaitKey(3)
+	left_thresh = self.threshold(image, "left")
+        cv.ShowImage('Left Viewer', left_thresh)
+        cv.WaitKey(3)
 
     def rightImageCallback(self, image):
-        colorImg, self.foundColorRight, self.xyCloseRight, self.xyCentroidRight = self.process(image)
-        #cv.ShowImage('Right Viewer', colorImg)
-        #cv.WaitKey(3)
+	right_thresh = self.threshold(image, "right")
+        cv.ShowImage('Right Viewer', right_thresh)
+        cv.WaitKey(3)
 
-    #def process(self, image):
+
+    def threshold(self, image, flag):
+	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")
+	gray_image = cv2.cvtColor(np.asarray(cv_image[:,:]), cv2.COLOR_BGR2GRAY)
+	#(thresh, im_bw) = cv2.threshold(gray_image, 200, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+	edges = cv2.Canny(gray_image, 80, 120)
+	lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 50, 1)
+	#print lines
+	print flag
+	#print len(lines)
+	for line in lines[0]:
+	    print line
+	return cv.fromarray(edges) #cv.fromarray(im_bw)
 		
         
 
@@ -100,6 +112,6 @@ def main():
 
 
 if __name__ == '__main__':
-    #main()
+    main()
     #test()
-    webcam()
+    #webcam()

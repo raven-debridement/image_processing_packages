@@ -1,5 +1,0 @@
-#!/usr/bin/env python
-
-id_to_robot = { 1: "left gripper",
-	        2: "right gripper",
-	      	3: "left shaft" }

@@ -1,0 +1,186 @@
+#!/usr/bin/env python
+
+# Import required Python code.
+import roslib
+roslib.load_manifest('raven_pose_estimator')
+import rospy
+
+import cv
+import cv2
+import numpy as np
+import math
+from std_msgs.msg import String
+from sensor_msgs.msg import Image, CameraInfo
+import cv_bridge
+from geometry_msgs.msg import Point, PointStamped
+import tf
+import image_geometry
+import time
+
+import message_filters
+from threading import Lock
+
+# adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
+
+class ColorSegmenter():
+    def __init__(self, left_camera, right_camera):
+        
+        self.leftInfo = self.rightInfo = None
+
+        self.foundColorLeft = False
+        self.foundColorRight = False
+	
+        self.listener = tf.TransformListener()
+	self.bridge = cv_bridge.CvBridge()
+        self.outputFrame = 'base_link'
+        rospy.Subscriber('%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
+        rospy.Subscriber('%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
+        rospy.Subscriber('%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
+        rospy.Subscriber('%s/camera_info'%right_camera, CameraInfo, self.rightInfoCallback)
+	self.pointpub = rospy.Publisher("foam_points", PointStamped)
+	self.foundColorRight = False
+	self.foundColorLeft = False
+	self.xyCloseLeft = None
+	self.xyCloseRight = None
+	self.xyCentroidLeft = None
+	self.xyCentroidRight = None	
+	self.leftHsvImg = cv.CreateImage((1280,960), 8, 3)
+	self.leftThreshImg = cv.CreateImage((1280,960), 8, 1)
+	self.rightHsvImg = cv.CreateImage((1280,960), 8, 3)
+	self.rightThreshImg = cv.CreateImage((1280,960), 8, 1)
+
+    def convertStereo(self, u, v, disparity):
+        """
+        Converts two pixel coordinates u and v along with the disparity to give PointStamped       
+        """
+        stereoModel = image_geometry.StereoCameraModel()
+        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+        (x,y,z) = stereoModel.projectPixelTo3d((u,v), disparity)
+        
+        cameraPoint = PointStamped()
+        cameraPoint.header.frame_id = self.leftInfo.header.frame_id
+        cameraPoint.header.stamp = rospy.Time.now()
+        cameraPoint.point = Point(x,y,z)
+
+        #self.listener.waitForTransform(self.outputFrame, cameraPoint.header.frame_id, rospy.Time.now(), rospy.Duration(4.0))
+        #outputPoint = self.listener.transformPoint(self.outputFrame, cameraPoint)
+        return cameraPoint
+    
+    def leftInfoCallback(self, info):
+	""" saves the info for the left camera	"""
+        self.leftInfo = info
+
+    def rightInfoCallback(self, info):
+	""" saves the info for the right camera	"""
+        self.rightInfo = info
+
+    def leftImageCallback(self, image):
+	""" thresholds the image and finds the coordinates of the centroid, 
+	as well as the closest pixel location to the centroid """
+	left_thresh, left_edges, self.foundColorLeft, self.xyCloseLeft, self.xyCentroidLeft = self.process(image, "left")
+	self.handleBoth()
+        cv.ShowImage('Left Thresholded', left_thresh)
+	cv.ShowImage('Left Edges', left_edges)
+        cv.WaitKey(3)
+
+    def rightImageCallback(self, image):
+	""" thresholds the image and finds the coordinates of the centroid, 
+	as well as the closest pixel location to the centroid """
+	right_thresh, right_edges, self.foundColorRight, self.xyCloseRight, self.xyCentroidRight = self.process(image, "right")
+	self.handleBoth()
+        cv.ShowImage('Right Viewer', right_thresh)
+	cv.ShowImage('Right Edges', right_edges)
+        cv.WaitKey(3)
+
+    def handleBoth(self):
+	""" returns the point in 3D space of the closest pixel of color """
+	if self.foundColorLeft and self.foundColorRight:
+	    u, v = self.xyCloseLeft
+	    disparity = self.xyCloseLeft[0] - self.xyCloseRight[0]
+	    self.pointpub.publish(self.convertStereo(u, v, disparity))
+
+    def process(self, image, flag):
+	"""
+	thresholds the image for a certain hsv range and returns the coordinates of the centroid, 
+	and the coordinates of the closest point to the centroid
+	"""
+	if flag=="right":
+	    hsvImg = self.leftHsvImg
+	    threshImg = self.leftThreshImg	
+	elif flag=="left":
+	    hsvImg = self.rightHsvImg	
+	    threshImg = self.rightThreshImg
+	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")	       
+        # these are the bounds for the color being filtered
+        # currently, these work well for the color red
+        # can be changed depending on the application
+        #lowerHSV = cv.Scalar(0, 160, 160)
+        #upperHSV = cv.Scalar(8, 255, 255)
+	lowerHSV = cv.Scalar(110, 100, 0)
+        upperHSV = cv.Scalar(120, 255, 150)
+	threshImg = self.threshold(cv_image, hsvImg, threshImg, lowerHSV, upperHSV)
+	(found, xClose, yClose, xCentroid, yCentroid) = self.find_centroid(threshImg)
+	(lines, edges) = self.find_lines(threshImg)
+	#print flag
+	if lines != None:
+   	    print lines[0]
+        return (threshImg, edges, found, (xClose, yClose), (xCentroid, yCentroid))
+
+    def threshold(self, image, hsvImg, threshImg, lowerHSV, upperHSV):
+	cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
+	cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
+	cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
+	cv.Erode(threshImg, threshImg, None, 1)
+        cv.Dilate(threshImg, threshImg, None, 1)
+	cv.Erode(threshImg, threshImg, None, 1)
+	return threshImg
+
+    def find_centroid(self, threshImg):
+	mat = cv.GetMat(threshImg)
+        yxCoords = []
+        for x in range(mat.width):
+            for y in range(mat.height):
+                if mat[y,x] > 0.0:
+                    yxCoords.append((y,x))
+        # check if any color is present
+        if len(yxCoords) == 0:
+            return (False,0,0,0,0)
+	else:                
+            yCentroid = sum([y for y,x in yxCoords])/len(yxCoords)
+            xCentroid = sum([x for y,x in yxCoords])/len(yxCoords)        
+            # find nearest color pixel to centroid (based on euclidean distance)
+            distFromCentroid = [((y-yCentroid)**2 + (x-xCentroid)**2)**.5 for y,x in yxCoords]
+            yClose, xClose = yxCoords[distFromCentroid.index(min(distFromCentroid))]
+	    return (True, xClose, yClose, xCentroid, yCentroid)
+
+    def find_lines(self, image):	
+	edges = cv2.Canny(np.asarray(image[:,:]), 80, 120)
+	lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 10, 1)
+	return (lines, cv.fromarray(edges))
+
+    def transform_plane(self, transform_matrix, plane):
+	""" takes in a transformation matrix and a plane """
+
+    #considered running skeletonization on the image; but this would be a big performance hit
+    """def skeletonize(self, image):
+	element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))
+	done = False
+	while not done:
+	    cv.Erode(image, eroded, element)
+	    cv.Dilate(eroded, temp, element)
+	    cv.Subtract(image, temp, temp)
+	    cv.Bitwise_Or("""
+
+
+def main():
+    rospy.init_node('color_segmenter')
+    left_camera = 'left'
+    right_camera = 'right'
+    gs = ColorSegmenter(left_camera, right_camera)
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()
+    #test()
+    #webcam()

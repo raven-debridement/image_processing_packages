@@ -1,11 +1,20 @@
 <!-- testing the hsv calculate node -->
 <launch>
-	<include file="$(find prosilica_camera)/launch/generic.launch" />
+	<arg name="camera" default="camera" />
+	<arg name="guid" default="143047" />
+	
+	<node name="$(arg camera)_driver" pkg="prosilica_camera" type="prosilica_node" output="screen">
+	   <remap from="camera" to="$(arg camera)" />
+           <param name="guid" type="str" value="$(arg guid)" />
+           <param name="auto_exposure" value="False" />
+           <param name="auto_gain" value="False" />
+	   <param name="auto_whitebalance" value="False" />
+	</node>
 
 	<node ns="camera" pkg="image_proc" type="image_proc" name="image_proc"/>
 
 	<node pkg="stereo_click" type="hsv_calculator.py" name="click_window">
-		<param name="cam" value="/camera" />
+		<param name="cam" value="$(arg camera)" />
 		<param name="output" value="hsv_values" />
 	</node>
 </launch>

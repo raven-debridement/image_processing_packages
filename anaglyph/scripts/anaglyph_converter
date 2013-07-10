@@ -12,7 +12,7 @@ import argparse
 
 class image_converter:
 
-    def __init__(self, publish_topic, left_image_topic, right_image_topic, crop):
+    def __init__(self, publish_topic, left_image_topic, right_image_topic, width_crop, height_crop):
         self.image_pub = rospy.Publisher(publish_topic,Image)
 
         #cv.NamedWindow("Image window", 1)
@@ -22,7 +22,8 @@ class image_converter:
 	self.left = False
 	self.right = False
 	self.out = False
-	self.crop = crop
+	self.width_crop = width_crop
+	self.height_crop = height_crop
 
     def left_callback(self,data):
         try:
@@ -41,9 +42,10 @@ class image_converter:
     def process(self):
 	if self.left!=False and self.right!=False:
 	    channels = []
-	    c = int(self.crop)/2
-	    self.left = self.left[0:self.left.height, c:self.left.width]
-	    self.right = self.right[0:self.right.height, 0:self.right.width-c]
+	    w = int((self.width_crop)/2)
+	    h = int((self.height_crop)/2)
+	    self.left = self.left[0:self.left.height-h, w:self.left.width]
+	    self.right = self.right[h:self.right.height, 0:self.right.width-w]
 	    for i in range(3):
 		channels.append(cv.CreateImage(cv.GetSize(self.left),8,1))
 	    for i in range(3):
@@ -65,11 +67,13 @@ def main(args):
     publish_topic = "anaglyph_images"
     left_image_topic = 'left_image_topic'
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s','--shift',type=int,default=250)
+    parser.add_argument('--horizontal',type=int,default=250)
+    parser.add_argument('--vertical',type=int,default=130)
     args = parser.parse_args(rospy.myargv()[1:])
-    crop = args.shift
-    right_image_topic = 'right_image_topic' #rospy.get_param('~right_image_topic', "/right/image_raw")
-    ic = image_converter(publish_topic, left_image_topic, right_image_topic, crop)
+    width_crop = args.horizontal
+    height_crop = args.vertical
+    right_image_topic = 'right_image_topic' 
+    ic = image_converter(publish_topic, left_image_topic, right_image_topic, width_crop, height_crop)
     rospy.init_node('image_converter', anonymous=True)
     try:
         rospy.spin()
