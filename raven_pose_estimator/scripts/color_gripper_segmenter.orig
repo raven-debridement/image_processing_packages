@@ -27,31 +27,12 @@ import code
 
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
-TRANSLATION_R2L = (-0.05137, 0, 0.00136) #FIXME stick in translation and rotation matrices
-ROTATION_R2L = (0, -0.108380311, 0)
-ORANGE_LOWER = cv.Scalar( 6, 180, 180)
-ORANGE_UPPER = cv.Scalar( 10,255, 255)
-BLUE_LOWER = cv.Scalar(105,190, 200)
-BLUE_UPPER = cv.Scalar(115,255, 255)
+TRANSLATION_R2L = () #FIXME stick in translation and rotation matrices
+ROTATION_R2L = ()
 
 ###########################
 #     HELPER METHODS      #
 ###########################
-
-#def distance_between_lines(line1, line2): #FIXME get this function
-    
-
-def find_top_line(line1, line2):
-    if line2[3] > line1[3]:
-	return line2
-    else:
-	return line1
-
-#def split_into_pairs(lines): #FIXME get this function working
-  
-
-
-
 def find_lines(image):
     """ finds lines in a binary image using hough line transform, after running canny edge detection"""	
     edges = cv2.Canny(np.asarray(image[:,:]), 80, 120)
@@ -61,7 +42,7 @@ def find_lines(image):
 def distance(x1, y1, x2, y2):
     return ((x2-x1)**2+(y2-y1)**2)**0.5
 
-def get_max_line(lines): 
+def get_max_line(lines): #FIXME: we know want the top 4 lines, rather than just the longest line
     lengths = []
     for line in lines:
 	lengths.append(distance(line[0], line[1], line[2], line[3]))
@@ -69,25 +50,9 @@ def get_max_line(lines):
     i = lengths.index(max_length)
     return lines[i]
 
-def get_n_lines(lines, n):
-    """ returns the top n longest lines """
-    lengths_to_lines = {}
-    for line in lines:
-	lengths_to_lines[distance(line[0], line[1], line[2], line[3])] = line
-    lengths = list(lengths_to_lines.keys())
-    lengths.sort()
-    result = []
-    if len(lengths) >= n:
-	k = n
-    else:
-	k = len(lengths)
-    for i in range(0, k):
-	result.append(lengths_to_lines[lengths[i]])
-    return result
-
 def transform_plane(translation, rotation, plane):
     """ takes in a transformation matrix and a plane """
-    result_plane = (rotate_vector(rotation, plane[0]), (plane[1][0]+translation[0], plane[1][1]+translation[1], plane[1][2]+translation[2])) #FIXME get the translation and rotation working properly
+    result_plane = (rotate_vector(rotation, plane[0]), (plane[1][0]+translation[0], plane[1][1]+translation[1], plane[1][2]+translation[2]) #FIXME get the translation and rotation working properly
     return result_plane
 
 def intersect_planes(plane1, plane2):
@@ -100,7 +65,7 @@ def rotate_vector(yaw_pitch_roll, vector):
     a = yaw_pitch_roll[0]
     b = yaw_pitch_roll[1]
     c = yaw_pitch_roll[2]
-    rot_matrix = np.array([[math.cos(a)*math.cos(b), math.cos(a)*math.sin(b)*math.sin(c)-math.sin(a)*math.cos(c), math.cos(a)*math.sin(b)*math.cos(c)+math.sin(a)*math.sin(c)], [math.sin(a)*math.cos(b), math.sin(a)*math.sin(b)*math.sin(c)+math.cos(a)*math.cos(c), math.sin(a)*math.sin(b)*math.cos(c)-math.cos(a)*math.sin(c)], [-math.sin(b), math.cos(b)*math.sin(c), math.cos(b)*math.cos(c)]])
+    rot_matrix = np.array([math.cos(a)*math.cos(b), math.cos(a)*math.sin(b)*math.sin(c)-math.sin(a)*math.cos(c), math.cos(a)*math.sin(b)*math.cos(c)+math.sin(a)*math.sin(c), math.sin(a)*math.cos(b), math.sin(a)*math.sin(b)*math.sin(c)+math.cos(a)*math.cos(c), math.sin(a)*math.sin(b)*math.cos(c)-math.cos(a)*math.sin(c), -math.sin(b), math.cos(b)*math.sin(c), math.cos(b)*math.cos(c)])
     rot_matrix.reshape((3,3))
     result = rot_matrix*vector
     return result
@@ -110,11 +75,10 @@ def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
     cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
     cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
     cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
-    #cv.Erode(threshImg, threshImg, None, 1)
-    #cv.Dilate(threshImg, threshImg, None, 1)
-    #cv.Erode(threshImg, threshImg, None, 1)
-    #cv.Dilate(threshImg, threshImg, None, 1)
-    #cv.Erode(threshImg, threshImg, None, 1)
+    cv.Erode(threshImg, threshImg, None, 1)
+    cv.Dilate(threshImg, threshImg, None, 1)
+    cv.Erode(threshImg, threshImg, None, 1)
+    cv.Dilate(threshImg, threshImg, None, 1)
     return threshImg
 
 ##################
@@ -132,10 +96,10 @@ class ColorSegmenter():
         self.listener = tf.TransformListener()
 	self.bridge = cv_bridge.CvBridge()
         self.outputFrame = 'base_link'
-        rospy.Subscriber('/stereo/%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
-        rospy.Subscriber('/stereo/%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
-        rospy.Subscriber('/stereo/%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
-        rospy.Subscriber('/stereo/%s/camera_info'%right_camera, CameraInfo, self.rightInfoCallback)
+        rospy.Subscriber('%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
+        rospy.Subscriber('%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
+        rospy.Subscriber('%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
+        rospy.Subscriber('%s/camera_info'%right_camera, CameraInfo, self.rightInfoCallback)
 	self.pointpub = rospy.Publisher("foam_points", PointStamped)
 	self.foundColorRight = False
 	self.foundColorLeft = False
@@ -147,15 +111,6 @@ class ColorSegmenter():
 	self.leftThreshImg = cv.CreateImage((1280,960), 8, 1)
 	self.rightHsvImg = cv.CreateImage((1280,960), 8, 3)
 	self.rightThreshImg = cv.CreateImage((1280,960), 8, 1)
-	self.blue_right_lines = []
-	self.orange_right_lines = []
-	self.blue_left_lines = []
-	self.orange_left_lines = []
-	self.left_orange_found = False
-	self.left_blue_found = False
-	self.right_orange_found = False
-	self.right_blue_found = False
-	
 
     def convertStereo(self, u, v, disparity):
         """
@@ -185,8 +140,7 @@ class ColorSegmenter():
     def leftImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	#left_edges, self.foundColorLeft, self.left_lines = self.process(image, "left")
-	self.blue_left_lines, self.blue_left_edges, self.left_blue_found,self.orange_left_lines, self.orange_left_edges,self.left_orange_found = self.process(image, "left")
+	left_edges, self.foundColorLeft, self.left_lines = self.process(image, "left")
 	self.handleBoth()
         #cv.ShowImage('Left Thresholded', left_thresh)
 	#cv.ShowImage('Left Edges', left_edges)
@@ -195,43 +149,21 @@ class ColorSegmenter():
     def rightImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	self.blue_right_lines, self.blue_right_edges,self.right_blue_found, self.orange_right_lines, self.orange_right_edges ,self.right_orange_found = self.process(image, "right")
+	right_edges, self.foundColorRight, self.right_lines = self.process(image, "right")
 	self.handleBoth()
         #cv.ShowImage('Right Viewer', right_thresh)
 	#cv.ShowImage('Right Edges', right_edges)
         #cv.WaitKey(3)
 
-    def find_unit_vector(self, left_lines, right_lines, color):
-        longest_left = get_max_line(left_lines)
-        longest_right = get_max_line(right_lines)
-        left_plane = self.transform_to_world(longest_left, "left") 
-        right_plane = self.transform_to_world(longest_right, "right")
-        transformed_plane = transform_plane(TRANSLATION_R2L, ROTATION_R2L, right_plane) 
-        unit_vector = intersect_planes(left_plane, right_plane)
-        return unit_vector  
-
     def handleBoth(self):
 	""" returns the unit vector corresponding to the orientation of the colored tape """
-	if self.left_orange_found and self.left_blue_found and self.right_orange_found and self.right_blue_found:
-	    blue_vector = self.find_unit_vector(self.blue_left_lines[0], self.blue_right_lines[0], "blue")
-	    orange_vector = self.find_unit_vector(self.orange_left_lines[0], self.orange_right_lines[0], "orange")
-	    quat = self.get_orientation_from_lines(blue_vector, orange_vector)
-	    print tfx.tb_angles(quat)
-	"""if self.foundColorLeft and self.foundColorRight:	    
-	    #longest_left = get_n_lines(self.left_lines[0], 4)
-	    #longest_right = get_n_lines(self.right_lines[0], 4)
-	    #FIXME 
-	    #longest_left = get_max_line(self.left_lines[0])
-	    #longest_right = get_max_line(self.right_lines[0])
-	    #print "VALUES"
-	    #print longest_left
-	    #print longest_right
-	    #left_plane = self.transform_to_world(longest_left, "left")
-	    #right_plane = self.transform_to_world(longest_right, "right")
-	    #transformed_plane = transform_plane(TRANSLATION_R2L, ROTATION_R2L, right_plane) 
-	    #unit_vector = intersect_planes(left_plane, right_plane)
-	    #return unit_vector
-	    #print unit_vector"""
+	if self.foundColorLeft and self.foundColorRight:
+	    longest_left = get_max_line(self.left_lines)
+	    longest_right = get_max_line(self.right_lines)
+	    left_plane = self.transform_to_world(longest_left, "left")
+	    right_plane = self.transform_to_world(longest_right, "right")
+	    transformed_plane = transform_plane(TRANSLATION_R2L, ROTATION_R2L, right_plane) 
+	    unit_vector = intersect_planes(left_plane, right_plane)
 	    
     def process(self, image, flag):
 	"""
@@ -244,20 +176,14 @@ class ColorSegmenter():
 	elif flag=="left":
 	    hsvImg = self.rightHsvImg	
 	    threshImg = self.rightThreshImg
-	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")
-	orangeThreshImg = cv.CreateImage((1280,960),8,1)
-	orangeThreshImg = threshold(cv_image, hsvImg, orangeThreshImg, ORANGE_LOWER, ORANGE_UPPER)
-	(orange_lines, orange_edges) = find_lines(orangeThreshImg)
-	blueThreshImg = cv.CreateImage((1280,960),8,1)
-	blueThreshImg = threshold(cv_image, hsvImg, blueThreshImg, BLUE_LOWER, BLUE_UPPER)
-	(blue_lines, blue_edges) = find_lines(blueThreshImg)
-	#found = (lines!=None)
-	#if found:
-   	#    max_line = get_max_line(lines[0])
-	#return (edges, found, lines)
-	blue_found = (blue_lines!=None)
-	orange_found = (orange_lines!=None)
-	return (blue_lines, blue_edges, blue_found, orange_lines, orange_edges, orange_found)
+	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")	
+	lowerHSV = cv.Scalar(100, 50, 140)
+        upperHSV = cv.Scalar(120, 255, 255)
+	threshImg = threshold(cv_image, hsvImg, threshImg, lowerHSV, upperHSV)
+	(lines, edges) = find_lines(threshImg)
+	if lines != None:
+   	    max_line = get_max_line(lines[0])
+	return (edges, found, lines)
 
     def transform_to_world(self, line, flag):
 	""" takes in a pixel line as defined by two endpoints and transforms it to real-world coordinates based on camera info"""
@@ -270,11 +196,28 @@ class ColorSegmenter():
 	x2 = line[2]
 	y2 = line[3]
 	pinhole_model = image_geometry.PinholeCameraModel()
-	pinhole_model.fromCameraInfo(info)	
-	ray1 = pinhole_model.projectPixelTo3dRay((x1, y1))
-	ray2 = pinhole_model.projectPixelTo3dRay((x2, y2))
-	plane_normal = np.cross(ray1, ray2) 
+	pinhole_model.fromcameraInfo(info)	
+	ray1 = pinhole_model.projectPixelTo3dRay(x1, y1)
+	ray2 = pinhole_model.projectPixelTo3dRay(x2, y2)
+	plane_normal = np.cross(ray1, ray2) #FIXME not sure what the output type of projectPixelTo3dRay is
 	return (plane_normal, (0,0,0))
+<<<<<<< HEAD
+=======
+	
+    def intersect_planes(self, plane1, plane2):
+	""" where a plane is the tuple (normal, point); returns unit vector corresponding to the intersection """
+	cross_product = np.cross(plane1[0], plane2[0])
+	return 
+
+    #considered running skeletonization on the image; but this would be a big performance hit
+    """def skeletonize(self, image):
+	element = cv2.getStructuringElement(cv2.MORPH_CROSS, (3,3))
+	done = False
+	while not done:
+	    cv.Erode(image, eroded, element)
+	    cv.Dilate(eroded, temp, element)
+	    cv.Subtract(image, temp, temp)
+	    cv.Bitwise_Or("""
 
     def get_orientation_from_lines(self, v0, v1):
         """
@@ -311,19 +254,7 @@ def test_orientation():
     
     gs.get_orientation_from_lines(v0, v1)
 
-def test_everything():
-    rospy.init_node('color_segmenter')
-    left_camera = 'left'
-    right_camera = 'right'
-    gs = ColorSegmenter(left_camera, right_camera)
-    rospy.spin()
-    gs.foundColorLeft = True
-    gs.foundColorRight = True
-    gs.left_lines = [[(0, 0, 15, 15)]]
-    gs.right_lines = [[(0, 0, 20, 20)]]
-    vector = gs.handleBoth()
-    print vector
-     
+>>>>>>> 49ea79746445be2570fa331e6654d18db28eba55
 
 def main():
     rospy.init_node('color_segmenter')
@@ -334,6 +265,5 @@ def main():
 
 
 if __name__ == '__main__':
-    #test_everything()
-    main()
-    #test_orientation()
+    #main()
+    test_orientation()
