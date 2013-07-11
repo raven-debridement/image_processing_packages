@@ -227,6 +227,7 @@ class ColorSegmenter():
 	"""
 	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")
 	orangeThreshImg = cv.CreateImage((1280,960),8,1)
+	hsvImg = cv.CreateImage((1280,960),8,3)
 	orangeThreshImg = threshold(cv_image, hsvImg, orangeThreshImg, ORANGE_LOWER, ORANGE_UPPER)
 	(orange_lines, orange_edges) = find_lines(orangeThreshImg)
 	blueThreshImg = cv.CreateImage((1280,960),8,1)
