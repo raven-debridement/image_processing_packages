@@ -34,7 +34,7 @@ struct LocalConfig : Config {
 		params.push_back(new Parameter<int>("height", &height, "chessboard height"));
 		params.push_back(new Parameter<float>("square", &square, "chessboard sidelength"));
 		params.push_back(new Parameter<string>("topic", &topic, "pose topic"));
-		params.push_back(new Parameter<string>("info", &info, "info topic"));
+ 		params.push_back(new Parameter<string>("info", &info, "camera info"));
 		params.push_back(new Parameter<string>("image", &image_topic, "image topic"));
 		params.push_back(new Parameter<bool>("rect",&rect,"rectify image"));
 		params.push_back(new Parameter<float>("detection-interval", &detection_interval, "detection interval"));
@@ -82,14 +82,9 @@ int main(int argc, char* argv[]) {
 	ros::Subscriber image_sub = nh.subscribe(image_topic, 1, callback);
 	ros::Publisher pose_pub = nh.advertise<geometry_msgs::PoseStamped>(LocalConfig::topic,1);
 	
-	string info_topic;
-	if (LocalConfig::info != ""){
-		info_topic = LocalConfig::info;
-	} else {
-		info_topic = "/camera/camera_info";
-	}
-	ROS_INFO_STREAM(info_topic);
-	sensor_msgs::CameraInfoConstPtr info_ptr = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(info_topic, nh, ros::Duration(5));
+	string info;
+	info = LocalConfig::info;
+	sensor_msgs::CameraInfoConstPtr info_ptr = ros::topic::waitForMessage<sensor_msgs::CameraInfo>(info, nh, ros::Duration(1));
 	if (!info_ptr) throw runtime_error("could not get camera info");
 
 	if (LocalConfig::rect) {
@@ -155,7 +150,7 @@ int main(int argc, char* argv[]) {
 			ps.header.stamp = ros::Time::now();
 			pose_pub.publish(ps);
 		}
-		/**if ((ros::Time::now() -last_print).toSec() > LocalConfig::print_interval) {
+		if ((ros::Time::now() -last_print).toSec() > LocalConfig::print_interval) {
 			if (!total_num_poses) {
 				ROS_INFO("Chessboards:    NONE RECEIVED   %s",pose_pub.getTopic().c_str());
 			} else if (num_poses_since_print) {
@@ -165,7 +160,7 @@ int main(int argc, char* argv[]) {
 			}
 			last_print = ros::Time::now();
 			num_poses_since_print = 0;
-		}**/
+		}
 
 
 		//imshow(windowName, image);
