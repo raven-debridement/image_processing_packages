@@ -4,6 +4,7 @@ import roslib
 roslib.load_manifest('raven_pose_estimator')
 import rospy
 import tf
+import tfx
 import math
 import image_geometry
 from ar_pose.msg import ARMarker
@@ -125,6 +126,9 @@ class PoseEstimator:
 
 	# publishes the message with joints and poses
 	def publish(self):
+		print "data"
+		print "[%d, %d, %d, %d]"%self.output.pose.pose.orientation.x, self.output.pose.pose.orientation.y, self.output.pose.pose.orientation.z, self.output.pose.pose.orientation.w
+		print tfx.pose(self.output.pose.pose.orientation)
 		self.output_publisher.publish(self.output)
 		if self.marker_type == "AR":
 			self.output = ARMarkers()
@@ -155,8 +159,8 @@ class PoseEstimator:
 		return accurate_pose
 
 def main():
-	left_camera = 'left'
-	right_camera = 'right'
+	left_camera = '/stereo/left'
+	right_camera = '/stereo/right'
 	left_poses = 'left_poses'
 	right_poses = 'right_poses'
 	marker_type = 'CHESS'

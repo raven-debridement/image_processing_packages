@@ -7,27 +7,25 @@
     <arg name="square" default="0.00615" />
     <arg name="left_topic" default="left_tracker" />
     <arg name="right_topic" default="right_tracker" />
-	<arg name="left_camera_info" default="/left/camera_info" />
-	<arg name="right_camera_info" default="/right/camera_info" />
-	<arg name="left_camera_image" default="/left/image_color" />
-	<arg name="right_camera_image" default="/right/image_color" />
+    <arg name="left_camera_info" default="stereo/left/camera_info" />
+    <arg name="right_camera_info" default="stereo/right/camera_info" />
+    <arg name="left_camera_image" default="stereo/left/image_color" />
+    <arg name="right_camera_image" default="stereo/right/image_color" />
  
     <!--<node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>-->
 
-    <!--<node pkg="tf" type="static_transform_publisher" name="camera_to_ground" args="0 0 0 0 0 0 ground camera 100" />
-    <node pkg="tf" type="static_transform_publisher" name="left_to_right" args="0.5 0 0 1 0 0 left_camera right_camera 100" />-->
+    <node pkg="tf" type="static_transform_publisher" name="camera_to_ground" args="0 0 0 0 0 0 ground camera 100" />
+    <node pkg="tf" type="static_transform_publisher" name="left_to_right" args="-0.05137 0 0.00136 0 -0.108380311 0 left_camera right_camera 100" />
 
-    <node name="left_chessboard_tracker" pkg="raven_2_vision" type="chessboard_tracker"
-                args="--width $(arg width) --height $(arg height) --square $(arg square) --topic $(arg left_topic) --info $(arg left_camera_info) --image $(arg left_camera_image)"
-                output="screen"/>
+    <node name="left_chessboard_tracker" pkg="raven_2_vision" type="chessboard_tracker" args="--width $(arg width) --height $(arg height) --square $(arg square) --topic $(arg left_topic) --info $(arg left_camera_info) --image $(arg left_camera_image)" />
 
-    <node name="right_chessboard_tracker" pkg="raven_2_vision" type="chessboard_tracker"
-                args="--width $(arg width) --height $(arg height) --square $(arg square) --topic $(arg right_topic) --info $(arg right_camera_info) --image $(arg right_camera_image)"
-                output="screen"/>
-
+    <node name="right_chessboard_tracker" pkg="raven_2_vision" type="chessboard_tracker"  args="--width $(arg width) --height $(arg height) --square $(arg square) --topic $(arg right_topic) --info $(arg right_camera_info) --image $(arg right_camera_image)" />
+    
     <node name="chess_pose_estimator" pkg="raven_pose_estimator" type="pose_estimator" output="screen">
 		<remap from="left_poses" to="$(arg left_topic)" />
 	 	<remap from="right_poses" to="$(arg right_topic)" />
+		<remap from="left" to="stereo/left" />
+		<remap from="right" to="stereo/right" />
 		<remap from="marker_type" to="CHESS" />
     </node>
 

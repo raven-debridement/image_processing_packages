@@ -8,6 +8,7 @@ import rospy
 import cv
 import cv2
 import numpy as np
+from scipy import linalg
 import math
 from std_msgs.msg import String
 from sensor_msgs.msg import Image, CameraInfo
@@ -59,6 +60,28 @@ def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
 #     3D GEOMETRY HELPER METHODS       #
 ########################################
 
+def flip_origin(point, height):
+    x = point[0]
+    y = point[1]
+    result_x = x
+    result_y = height-y
+    return (result_x, result_y)
+
+def flip_line(line, height):
+    (x1, y1) = flip_origin((line[0], line[1]), 1280)
+    (x2, y2) = flip_origin((line[2], line[3]), 1280)
+    return (x1, y1, x2, y2)
+
+def angleBetweenQuaternions(quat0, quat1):
+    """
+    Returns angle between quat0 and quat1 in degrees
+    """
+    q0 = np.array(quat0)
+    q1 = np.array(quat1)
+    theta = math.acos(2*np.dot(q0,q1)**2 - 1)
+    theta = theta*(180.0/math.pi)
+    return theta
+
 """ takes in two lines in (x1, y1, x2, y2) form and finds the line on top """
 def find_top_line(line1, line2):
     if line2[3] > line1[3]:
@@ -66,10 +89,18 @@ def find_top_line(line1, line2):
     else:
 	return line1
 
+def invert_vector(v):
+    result = [-t for t in v]
+    return result
+
 """ finds lines in a binary image using hough line transform, after running canny edge detection """	
 def find_lines(image):    
     edges = cv2.Canny(np.asarray(image[:,:]), 80, 120)
-    lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 10, 1)
+    lines = cv2.HoughLinesP(edges, 1, math.pi/180, 1, None, 20, 1)
+    flipped_lines = []
+    if lines != None:
+	for line in lines[0]:
+	    flipped_lines.append(flip_line(line, 1280))
     return (lines, cv.fromarray(edges))
 
 """ finds the distance between two points """
@@ -109,6 +140,7 @@ def transform_plane(translation, rotation, plane):
 """ where a plane is the tuple (normal, point); returns unit vector corresponding to the normal of the intersection of two planes """
 def intersect_planes(plane1, plane2):    
     cross_product = np.cross(plane1[0], plane2[0])
+    #cross_product = np.cross(plane2[0], plane1[0])
     return cross_product
 	
 """ helper function to rotate a vector given yaw-pitch-roll values """ #FIXME looks like a place where an error might be
@@ -143,7 +175,6 @@ class ColorSegmenter():
         rospy.Subscriber('/stereo/%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
         rospy.Subscriber('/stereo/%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
         rospy.Subscriber('/stereo/%s/camera_info'%right_camera, CameraInfo, self.rightInfoCallback)
-
 	self.blue_right_lines = []
 	self.orange_right_lines = []
 	self.blue_left_lines = []
@@ -152,6 +183,7 @@ class ColorSegmenter():
 	self.left_blue_found = False
 	self.right_orange_found = False
 	self.right_blue_found = False
+	self.prev_quat = None
 	
 
     def convertStereo(self, u, v, disparity):
@@ -187,9 +219,18 @@ class ColorSegmenter():
 	#left_edges, self.foundColorLeft, self.left_lines = self.process(image, "left")
 	self.blue_left_lines, self.blue_left_edges, self.left_blue_found,self.orange_left_lines, self.orange_left_edges,self.left_orange_found = self.process(image, "left")
 	self.handleBoth()
+	#some debugging stuff
+	"""if self.blue_left_lines != None:
+	    image = self.bridge.imgmsg_to_cv(image, "bgr8")
+	    blue_max_line = get_max_line(self.blue_left_lines[0])
+	    print blue_max_line
+	    np_version = np.asarray(image[:,:])
+	    cv2.line(np_version, (blue_max_line[0], blue_max_line[1]), (blue_max_line[2], blue_max_line[3]), (0,0,255), 3)
+	    image = cv.fromarray(np_version)"""
         #cv.ShowImage('Left Thresholded', left_thresh)
-	cv.ShowImage('Left Blue Edges', self.blue_left_edges)
-	cv.ShowImage('Left Orange Edges', self.orange_left_edges)
+	#cv.ShowImage('Left Orange Edges', self.orange_left_edges)
+	#cv.ShowImage('Left Blue Edges', self.blue_left_edges)
+	#cv.ShowImage('lines', image)
         cv.WaitKey(3)
 
     def rightImageCallback(self, image):
@@ -205,8 +246,18 @@ class ColorSegmenter():
 	if self.left_orange_found and self.left_blue_found and self.right_orange_found and self.right_blue_found:
 	    blue_vector = self.find_unit_vector(self.blue_left_lines[0], self.blue_right_lines[0], "blue")
 	    orange_vector = self.find_unit_vector(self.orange_left_lines[0], self.orange_right_lines[0], "orange")
+	    #blue_vector = invert_vector(blue_vector)
+	    #orange_vector = invert_vector(orange_vector)
 	    quat = self.get_orientation_from_lines(blue_vector, orange_vector)
+	    print "quaternion"
+	    print quat
+	    print "yaw pitch roll"
 	    print tfx.tb_angles(quat)
+	    if self.prev_quat != None:
+		angle = angleBetweenQuaternions(self.prev_quat, quat) #FIXME uncomment this
+		print "angle"
+		print angle
+	    self.prev_quat = quat
 
     ##############################
     #       HELPER METHODS       #
@@ -218,6 +269,8 @@ class ColorSegmenter():
         right_plane = self.transform_to_world(longest_right, "right")
         transformed_plane = transform_plane(TRANSLATION_R2L, ROTATION_R2L, right_plane) 
         unit_vector = intersect_planes(left_plane, right_plane)
+	#print "unit_vector"
+	#print unit_vector
         return unit_vector      
 	    
     def process(self, image, flag):
@@ -247,10 +300,17 @@ class ColorSegmenter():
 	y1 = line[1]
 	x2 = line[2]
 	y2 = line[3]
+	#print "points"
+	#print x1, y1
+	#print x2, y2
 	pinhole_model = image_geometry.PinholeCameraModel()
 	pinhole_model.fromCameraInfo(info)	
 	ray1 = pinhole_model.projectPixelTo3dRay((x1, y1))
 	ray2 = pinhole_model.projectPixelTo3dRay((x2, y2))
+	#print flag
+	#print "rays"
+	#print ray1
+	#print ray2
 	plane_normal = np.cross(ray1, ray2) 
 	return (plane_normal, (0,0,0))
 
@@ -260,16 +320,29 @@ class ColorSegmenter():
         that are KNOWN to be in the same plane
         """
         # get into an np array
+	#v1 = invert_vector(v1)
+	#v0 = invert_vector(v0)
         v0, v1 = np.array(v0), np.array(v1)
+	#print "DOT PRODUCT"
+	#print v0
+	#print v1
+	#print np.dot(v0,v1)
         # normalize
-        v0 = v0 / np.linalg.norm(v0)
-        v1 = v1 / np.linalg.norm(v1)
+        v0 = v0 / np.linalg.norm(v0) 
+        v1 = v1 / np.linalg.norm(v1) 
         # find normal
         n = np.cross(v0, v1)
+	#n = np.cross(v1, v0)
         # stack into a matrix
-        rotMat = np.vstack((v0, v1, n)).T
+        #rotMat = np.vstack((n, v0, v1)).T
+	rotMat = np.vstack((v0, v1, n)).T
+	matrix = rotMat
+	#matrix = linalg.orth(rotMat) #FIXME uncomment
+	#print "matrices"
+	#print rotMat
+	#print orthogonalized
         # find the quaternion xyzw
-        tbRot = tfx.tb_angles(rotMat)
+        tbRot = tfx.tb_angles(matrix)
         quat = tbRot.quaternion
         #code.interact(local=locals())
         return list(quat)
