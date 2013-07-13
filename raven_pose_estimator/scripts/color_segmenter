@@ -20,6 +20,10 @@ import time
 import message_filters
 from threading import Lock
 
+
+LOWERHSV = cv.Scalar(0, 120, 120)
+UPPERHSV = cv.Scalar(8, 255, 255)
+
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
 class ColorSegmenter():
@@ -77,21 +81,21 @@ class ColorSegmenter():
     def leftImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	left_thresh, left_edges, self.foundColorLeft, self.xyCloseLeft, self.xyCentroidLeft = self.process(image, "left")
+	left_thresh, self.foundColorLeft, self.xyCloseLeft, self.xyCentroidLeft = self.process(image, "left")
 	#left_edges, self.foundColorLeft, left_lines = self.process(image, "left")
 	self.handleBoth()
-        #cv.ShowImage('Left Thresholded', left_thresh)
-	cv.ShowImage('Left Edges', left_edges)
+        cv.ShowImage('Left Thresholded', left_thresh)
+	#cv.ShowImage('Left Edges', left_edges)
         cv.WaitKey(3)
 
     def rightImageCallback(self, image):
 	""" thresholds the image and finds the coordinates of the centroid, 
 	as well as the closest pixel location to the centroid """
-	right_thresh, right_edges, self.foundColorRight, self.xyCloseRight, self.xyCentroidRight = self.process(image, "right")
+	right_thresh, self.foundColorRight, self.xyCloseRight, self.xyCentroidRight = self.process(image, "right")
 	#right_edges, self.foundColorRight, right_lines = self.process(image, "right")
 	self.handleBoth()
-        #cv.ShowImage('Right Viewer', right_thresh)
-	cv.ShowImage('Right Edges', right_edges)
+        cv.ShowImage('Right Viewer', right_thresh)
+	#cv.ShowImage('Right Edges', right_edges)
         cv.WaitKey(3)
 
     def handleBoth(self):
@@ -116,13 +120,11 @@ class ColorSegmenter():
         # these are the bounds for the color being filtered
         # currently, these work well for the color red
         # can be changed depending on the application
-        lowerHSV = cv.Scalar(0, 160, 160)
-        upperHSV = cv.Scalar(8, 255, 255)
 	#lowerHSV = cv.Scalar(100, 50, 140)
         #upperHSV = cv.Scalar(120, 255, 255)
-	threshImg = self.threshold(cv_image, hsvImg, threshImg, lowerHSV, upperHSV)
+	threshImg = self.threshold(cv_image, hsvImg, threshImg, LOWERHSV, UPPERHSV)
 	(found, xClose, yClose, xCentroid, yCentroid) = self.find_centroid(threshImg)
-        return (threshImg, edges, found, (xClose, yClose), (xCentroid, yCentroid))
+        return (threshImg, found, (xClose, yClose), (xCentroid, yCentroid))
 
     def threshold(self, image, hsvImg, threshImg, lowerHSV, upperHSV):
 	cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
@@ -130,8 +132,8 @@ class ColorSegmenter():
 	cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
 	cv.Erode(threshImg, threshImg, None, 1)
         cv.Dilate(threshImg, threshImg, None, 1)
-	cv.Erode(threshImg, threshImg, None, 1)
-	cv.Dilate(threshImg, threshImg, None, 1)
+	#cv.Erode(threshImg, threshImg, None, 1)
+	#cv.Dilate(threshImg, threshImg, None, 1)
 	return threshImg
 
     def find_centroid(self, threshImg):
@@ -154,8 +156,8 @@ class ColorSegmenter():
 
 def main():
     rospy.init_node('color_segmenter')
-    left_camera = 'left'
-    right_camera = 'right'
+    left_camera = 'stereo/left'
+    right_camera = 'stereo/right'
     gs = ColorSegmenter(left_camera, right_camera)
     rospy.spin()
 

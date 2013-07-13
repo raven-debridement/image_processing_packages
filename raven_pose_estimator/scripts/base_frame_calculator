@@ -1,0 +1,247 @@
+#!/usr/bin/env python
+
+# Import required Python code.
+import roslib
+roslib.load_manifest('raven_pose_estimator')
+import rospy
+
+import cv
+import cv2
+import numpy as np
+from scipy import linalg
+import math
+from std_msgs.msg import String
+from sensor_msgs.msg import Image, CameraInfo
+import cv_bridge
+from geometry_msgs.msg import Point, PointStamped
+import tf
+import image_geometry
+import time
+
+import message_filters
+from threading import Lock
+
+import tf.transformations as tft
+import tfx
+
+import code
+# adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
+
+##################
+#   MAIN CLASS   #
+##################
+
+class ColorSegmenter():
+    def __init__(self, left_camera, right_camera):
+        
+        self.leftInfo = self.rightInfo = None
+
+        self.foundColorLeft = False
+        self.foundColorRight = False
+	
+        self.listener = tf.TransformListener()
+	self.bridge = cv_bridge.CvBridge()
+
+        rospy.Subscriber('/stereo/%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
+        rospy.Subscriber('/stereo/%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
+        rospy.Subscriber('/stereo/%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
+        rospy.Subscriber('/stereo/%s/camera_info'%right_camera, CameraInfo, self.rightInfoCallback)	
+
+    def convertStereo(self, u, v, disparity):
+        """
+        Converts two pixel coordinates u and v along with the disparity to give PointStamped       
+        """
+        stereoModel = image_geometry.StereoCameraModel()
+        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+        (x,y,z) = stereoModel.projectPixelTo3d((u,v), disparity)
+        
+        cameraPoint = PointStamped()
+        cameraPoint.header.frame_id = self.leftInfo.header.frame_id
+        cameraPoint.header.stamp = rospy.Time.now()
+        cameraPoint.point = Point(x,y,z)
+
+        #self.listener.waitForTransform(self.outputFrame, cameraPoint.header.frame_id, rospy.Time.now(), rospy.Duration(4.0))
+        #outputPoint = self.listener.transformPoint(self.outputFrame, cameraPoint)
+        return cameraPoint
+    
+    ################################
+    #   SUBSCRIBER BOUND METHODS   #
+    ################################
+    def leftInfoCallback(self, info):
+	""" saves the info for the left camera	"""
+        self.leftInfo = info
+
+    def rightInfoCallback(self, info):
+	""" saves the info for the right camera	"""
+        self.rightInfo = info
+
+    def leftImageCallback(self, image):
+	""" """
+	#left_edges, self.foundColorLeft, self.left_lines = self.process(image, "left")
+	self.blue_left_lines, self.blue_left_edges, self.left_blue_found,self.orange_left_lines, self.orange_left_edges,self.left_orange_found = self.process(image, "left")
+	self.handleBoth()
+	#some debugging stuff
+	"""if self.blue_left_lines != None:
+	    image = self.bridge.imgmsg_to_cv(image, "bgr8")
+	    blue_max_line = get_max_line(self.blue_left_lines[0])
+	    print blue_max_line
+	    np_version = np.asarray(image[:,:])
+	    cv2.line(np_version, (blue_max_line[0], blue_max_line[1]), (blue_max_line[2], blue_max_line[3]), (0,0,255), 3)
+	    image = cv.fromarray(np_version)"""
+        #cv.ShowImage('Left Thresholded', left_thresh)
+	#cv.ShowImage('Left Orange Edges', self.orange_left_edges)
+	#cv.ShowImage('Left Blue Edges', self.blue_left_edges)
+	#cv.ShowImage('lines', image)
+        cv.WaitKey(3)
+
+    def rightImageCallback(self, image):
+	""" """
+	self.blue_right_lines, self.blue_right_edges,self.right_blue_found, self.orange_right_lines, self.orange_right_edges ,self.right_orange_found = self.process(image, "right")
+	self.handleBoth()
+        #cv.ShowImage('Right Viewer', right_thresh)
+	#cv.ShowImage('Right Edges', right_edges)
+        #cv.WaitKey(3)
+
+    def handleBoth(self):
+	""" returns the unit vector corresponding to the orientation of the colored tape """
+	if self.left_orange_found and self.left_blue_found and self.right_orange_found and self.right_blue_found:
+	    blue_vector = self.find_unit_vector(self.blue_left_lines[0], self.blue_right_lines[0], "blue")
+	    orange_vector = self.find_unit_vector(self.orange_left_lines[0], self.orange_right_lines[0], "orange")
+	    #blue_vector = invert_vector(blue_vector)
+	    #orange_vector = invert_vector(orange_vector)
+	    quat = self.get_orientation_from_lines(blue_vector, orange_vector)
+	    print "quaternion"
+	    print quat
+	    print "yaw pitch roll"
+	    print tfx.tb_angles(quat)
+	    if self.prev_quat != None:
+		angle = angleBetweenQuaternions(self.prev_quat, quat) #FIXME uncomment this
+		print "angle"
+		print angle
+	    self.prev_quat = quat
+
+    ##############################
+    #       HELPER METHODS       #
+    ##############################
+    def find_unit_vector(self, left_lines, right_lines, color):
+        longest_left = get_max_line(left_lines)
+        longest_right = get_max_line(right_lines)
+        left_plane = self.transform_to_world(longest_left, "left") 
+        right_plane = self.transform_to_world(longest_right, "right")
+        transformed_plane = transform_plane(TRANSLATION_R2L, ROTATION_R2L, right_plane) 
+        unit_vector = intersect_planes(left_plane, right_plane)
+	#print "unit_vector"
+	#print unit_vector
+        return unit_vector      
+	    
+    def process(self, image, flag):
+	"""
+	thresholds the image for a certain hsv range and returns the coordinates of the centroid, 
+	and the coordinates of the closest point to the centroid
+	"""
+	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")
+	orangeThreshImg = cv.CreateImage((1280,960),8,1)
+	hsvImg = cv.CreateImage((1280,960),8,3)
+	orangeThreshImg = threshold(cv_image, hsvImg, orangeThreshImg, ORANGE_LOWER, ORANGE_UPPER)
+	(orange_lines, orange_edges) = find_lines(orangeThreshImg)
+	blueThreshImg = cv.CreateImage((1280,960),8,1)
+	blueThreshImg = threshold(cv_image, hsvImg, blueThreshImg, BLUE_LOWER, BLUE_UPPER)
+	(blue_lines, blue_edges) = find_lines(blueThreshImg)
+	blue_found = (blue_lines!=None)
+	orange_found = (orange_lines!=None)
+	return (blue_lines, blue_edges, blue_found, orange_lines, orange_edges, orange_found)
+
+    def transform_to_world(self, line, flag):
+	""" takes in a pixel line as defined by two endpoints and transforms it to real-world coordinates based on camera info"""
+	if flag == "right":
+	    info = self.rightInfo
+	elif flag == "left":
+	    info = self.leftInfo
+	x1 = line[0]
+	y1 = line[1]
+	x2 = line[2]
+	y2 = line[3]
+	#print "points"
+	#print x1, y1
+	#print x2, y2
+	pinhole_model = image_geometry.PinholeCameraModel()
+	pinhole_model.fromCameraInfo(info)	
+	ray1 = pinhole_model.projectPixelTo3dRay((x1, y1))
+	ray2 = pinhole_model.projectPixelTo3dRay((x2, y2))
+	#print flag
+	#print "rays"
+	#print ray1
+	#print ray2
+	plane_normal = np.cross(ray1, ray2) 
+	return (plane_normal, (0,0,0))
+
+    def get_orientation_from_lines(self, v0, v1):
+        """
+        v0 and v1 are vectors representing two lines
+        that are KNOWN to be in the same plane
+        """
+        # get into an np array
+	#v1 = invert_vector(v1)
+	#v0 = invert_vector(v0)
+        v0, v1 = np.array(v0), np.array(v1)
+	#print "DOT PRODUCT"
+	#print v0
+	#print v1
+	#print np.dot(v0,v1)
+        # normalize
+        v0 = v0 / np.linalg.norm(v0) 
+        v1 = v1 / np.linalg.norm(v1) 
+        # find normal
+        n = np.cross(v0, v1)
+	#n = np.cross(v1, v0)
+        # stack into a matrix
+        #rotMat = np.vstack((n, v0, v1)).T
+	rotMat = np.vstack((v0, v1, n)).T
+	matrix = rotMat
+	#matrix = linalg.orth(rotMat) #FIXME uncomment
+	#print "matrices"
+	#print rotMat
+	#print orthogonalized
+        # find the quaternion xyzw
+        tbRot = tfx.tb_angles(matrix)
+        quat = tbRot.quaternion
+        #code.interact(local=locals())
+        return list(quat)
+
+##############################
+#      EXECUTION CODE        #
+##############################
+def test_orientation():
+    rospy.init_node('orientation_from_lines',anonymous=True)
+    gs = ColorSegmenter('left','right')
+    
+    v0 = [1, 0, 0]
+    v1 = [0, 1, 0]
+    
+    gs.get_orientation_from_lines(v0, v1)
+
+def test_everything():
+    rospy.init_node('color_segmenter')
+    left_camera = 'left'
+    right_camera = 'right'
+    gs = ColorSegmenter(left_camera, right_camera)
+    rospy.spin()
+    gs.foundColorLeft = True
+    gs.foundColorRight = True
+    gs.left_lines = [[(0, 0, 15, 15)]]
+    gs.right_lines = [[(0, 0, 20, 20)]]
+    vector = gs.handleBoth()
+    print vector
+
+def main():
+    rospy.init_node('color_segmenter')
+    left_camera = 'left'
+    right_camera = 'right'
+    gs = ColorSegmenter(left_camera, right_camera)
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    #test_everything()
+    main()
+    #test_orientation()

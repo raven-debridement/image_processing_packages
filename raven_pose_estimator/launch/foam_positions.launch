@@ -1,0 +1,12 @@
+<!-- a general launch file that should work on most systems -->
+
+<launch>
+
+    <node pkg="tf" type="static_transform_publisher" name="camera_to_ground" args="0 0 0 0 0 0 ground camera 100" />
+    <node pkg="tf" type="static_transform_publisher" name="left_to_right" args="-0.05137 0 0.00136 0 -0.108380311 0 left_camera right_camera 100" />
+
+    <node name="foam_pose_estimator" pkg="raven_pose_estimator" type="color_segmenter" output="screen">
+	
+    </node>
+
+</launch>
