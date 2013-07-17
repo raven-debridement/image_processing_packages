@@ -1,7 +1,7 @@
 <!-- testing the hsv calculate node -->
 <launch>
 	<arg name="camera" default="camera" />
-	<arg name="guid" default="139569" />
+	<arg name="guid" default="104897" />
 	
 	<node name="$(arg camera)_driver" pkg="prosilica_camera" type="prosilica_node" output="screen">
 	   <remap from="camera" to="$(arg camera)" />

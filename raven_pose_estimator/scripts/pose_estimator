@@ -84,6 +84,8 @@ class PoseEstimator:
 				self.left_poses_dict[marker.id] = marker
 		elif self.marker_type == "CHESS":
 			self.left_pose = left_data
+			#print tfx.pose(self.left_pose.pose)
+			#print tfx.tb_angles(self.left_pose.pose).matrix
 		self.handle_both()
 
 	# waits until there are values in both right_poses_dict and left_poses_dict
@@ -128,7 +130,7 @@ class PoseEstimator:
 	def publish(self):
 		#print "data"
 		#print "[%d, %d, %d, %d]"%self.output.pose.pose.orientation.x, self.output.pose.pose.orientation.y, self.output.pose.pose.orientation.z, self.output.pose.pose.orientation.w
-		print tfx.pose(self.output.pose.pose)
+		#print tfx.pose(self.output.pose.pose)
 		self.output_publisher.publish(self.output)
 		if self.marker_type == "AR":
 			self.output = ARMarkers()
@@ -156,7 +158,7 @@ class PoseEstimator:
 		right_quat_stamped.header.frame_id = "right_camera"
 		transformed_orientation = self.transform_listener.transformQuaternion(self.left_frame, right_quat_stamped) 
 		accurate_pose.pose.orientation = slerp(transformed_orientation.quaternion, left.pose.orientation, 0.5) 
-		return accurate_pose
+		return accurate_pose.pose
 
 def main():
 	left_camera = '/stereo/left'

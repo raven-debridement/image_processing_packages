@@ -21,7 +21,7 @@ import message_filters
 from threading import Lock
 
 
-LOWERHSV = cv.Scalar(0, 120, 120)
+LOWERHSV = cv.Scalar(0, 120, 50)
 UPPERHSV = cv.Scalar(8, 255, 255)
 
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)

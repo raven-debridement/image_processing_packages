@@ -1,7 +1,6 @@
 <!-- a general launch file that should work on most systems -->
 
 <launch>
-    <!--<include file="$(find prosilica_camera)/launch/stereo.launch" />-->
     <arg name="width" default="8" />
     <arg name="height" default="6" />
     <arg name="square" default="0.00615" />
@@ -11,11 +10,12 @@
     <arg name="right_camera_info" default="stereo/right/camera_info" />
     <arg name="left_camera_image" default="stereo/left/image_color" />
     <arg name="right_camera_image" default="stereo/right/image_color" />
- 
-    <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" />
 
+    <!--<include file="$(find prosilica_camera)/launch/stereo.launch" />-->
+    <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" />
+ 
     <node pkg="tf" type="static_transform_publisher" name="camera_to_ground" args="0 0 0 0 0 0 ground camera 100" />
-    <node pkg="tf" type="static_transform_publisher" name="left_to_right" args="0.129296, 0, -0.00136124, 0, -0.104719755, 0 left_camera right_camera 100" />
+    <node pkg="tf" type="static_transform_publisher" name="left_to_right" args="0.129296 0 -0.00136124 0 -0.104719755 0 left_camera right_camera 100" />
 
     <node name="left_chessboard_tracker" pkg="raven_2_vision" type="chessboard_tracker" args="--width $(arg width) --height $(arg height) --square $(arg square) --topic $(arg left_topic) --info $(arg left_camera_info) --image $(arg left_camera_image)" />
 
@@ -29,6 +29,8 @@
 		<remap from="marker_type" to="CHESS" />
     </node>
 
+    <node name="gripper_estimator" pkg="raven_pose_estimator" type="color_gripper_segmenter.new" output="screen" />
 
+    <node name="error_checker" pkg="raven_pose_estimator" type="error" output="screen" />
 
 </launch>
