@@ -1,0 +1,505 @@
+#!/usr/bin/env python
+
+# Import required Python code.
+import roslib
+roslib.load_manifest('raven_pose_estimator')
+import rospy
+
+import cv
+import cv2
+import numpy as np
+from scipy import linalg
+import math
+from std_msgs.msg import String
+from sensor_msgs.msg import Image, CameraInfo
+import cv_bridge
+from geometry_msgs.msg import Point, PointStamped, Quaternion, PoseStamped
+import tf
+import image_geometry
+import time
+
+import message_filters
+from threading import Lock
+
+import tf.transformations as tft
+import tfx
+
+import code
+
+# adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
+
+########################################
+#             CONSTANTS                #
+########################################
+
+TRANSLATION_R2L = (-0.05137, 0, 0.00136) #FIXME stick in translation and rotation matrices
+ROTATION_R2L = (0, -0.108380311, 0)
+#TRANSLATION_R2L = (-0.129296, 0, 0.00136124)
+#ROTATION_R2L = (0,0.104719755,0)
+ORANGE_LOWER = cv.Scalar( 4, 100, 100)
+ORANGE_UPPER = cv.Scalar( 8, 255, 255)
+BLUE_LOWER = cv.Scalar(110,100, 80)
+BLUE_UPPER = cv.Scalar(120,255, 255)
+
+########################################
+#     3D GEOMETRY HELPER METHODS       #
+########################################
+
+def flip_origin(point, height):
+    x = point[0]
+    y = point[1]
+    result_x = x
+    result_y = height-y
+    return (result_x, result_y)
+
+def flip_line(line, height):
+    (x1, y1) = flip_origin((line[0], line[1]), 1280)
+    (x2, y2) = flip_origin((line[2], line[3]), 1280)
+    return (x1, y1, x2, y2)
+
+def normalize(vector):
+    norm = ((vector[0])**2+(vector[1])**2+(vector[2])**2)**0.5
+    normalized = []
+    for i in range(0, len(vector)):
+	normalized.append(vector[i]/norm)
+    return normalized
+  
+def cross_product(v1, v2):
+    x = v1[1]*v2[2]-v1[2]*v2[1]
+    y = -(v1[0]*v2[2]-v2[0]*v1[2])
+    z = v1[0]*v2[1]-v2[0]*v1[1]
+    return (x,y,z)
+
+def find_contours(im, name):
+    thresh = im
+    im = np.asarray(im[:,:])
+    contours, hierarchy = cv2.findContours(np.asarray(thresh[:,:]),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    #cv2.drawContours(im, contours, -1, (0,255,0), 2)
+    #cv.ShowImage(name+"_contours", cv.fromarray(im))
+    #print len(contours)
+    return contours
+
+def angleBetweenQuaternions(quat0, quat1):
+    """
+    Returns angle between quat0 and quat1 in degrees
+    """
+    q0 = np.array(quat0)
+    q1 = np.array(quat1)
+    theta = math.acos(2*np.dot(q0,q1)**2 - 1)
+    theta = theta*(180.0/math.pi)
+    return theta
+
+def invert_vector(v):
+    return [-x for x in v]
+
+def has_neighbor(point, point_list):
+    if (point[0]+1, point[1]) in point_list:
+	return True
+    elif (point[0]-1, point[1]) in point_list:
+	return True
+    elif (point[0], point[1]+1) in point_list:
+	return True
+    elif (point[0], point[1]-1) in point_list:
+	return True
+    elif (point[0]+1, point[1]+1) in point_list:
+	return True
+    elif (point[0]+1, point[1]-1) in point_list:
+	return True
+    elif (point[0]-1, point[1]+1) in point_list:
+	return True
+    elif (point[0]-1, point[1]-1) in point_list:
+	return True
+    else:
+	return False
+
+def find_centroid(yxCoords):
+    yCentroid = sum([y for y,x in yxCoords])/len(yxCoords)
+    xCentroid = sum([x for y,x in yxCoords])/len(yxCoords)        
+    # find nearest color pixel to centroid (based on euclidean distance)
+    distFromCentroid = [((y-yCentroid)**2 + (x-xCentroid)**2)**.5 for y,x in yxCoords]
+    yClose, xClose = yxCoords[distFromCentroid.index(min(distFromCentroid))]
+    return (xCentroid, yCentroid)
+
+def order_points(p1, p2):
+    if p1[1] > p2[1]:
+	return p1,p2
+    elif p1[1] < p2[1]:
+	return p2,p1
+    else:
+	return p1,p2
+
+def find_endpoints(contours):
+    if len(contours) >=2:
+	points = []
+	for c in contours:
+	    moments = cv2.moments(c)
+	    if moments['m00']!=0:
+                cx = int(moments['m10']/moments['m00'])     
+                cy = int(moments['m01']/moments['m00'])        
+	        points.append((cx, cy))
+	upper_pt, lower_pt = order_points(points[0], points[1])
+	return (lower_pt, upper_pt, True)
+    else:
+	return (0,0,False)
+
+#FIXME: uncomment later
+"""
+def find_endpoints(threshImg):
+    lower_pt = upper_pt = None
+    mat = cv.GetMat(threshImg)
+    yxCoords = []
+    for x in range(mat.width):
+	for y in range(mat.height):
+	    if mat[y,x] > 0.0:
+		yxCoords.append((y,x))
+    # check if any color is present
+    if len(yxCoords) == 0:
+	return (lower_pt, upper_pt, False)
+    else: 
+	points = [[]]
+	for point in yxCoords:
+	    for point_list in points:
+		had_neighbor = False
+ 	        if has_neighbor(point, point_list):
+		    point_list.append(point)
+		    had_neighbor == True
+	    if had_neighbor == False:
+		points.append([point])
+	centroids = []
+	for point_list in points:
+	    if len(point_list) > 0:
+  	        centroids.append(find_centroid(point_list))
+	#print "CENTROIDS: "+str(centroids)
+	upper_pt, lower_pt = order_points(centroids[0], centroids[len(centroids)-1])
+	print "UPPER POINT: "+str(upper_pt)
+	print "LOWER POINT: "+str(lower_pt)
+	return (lower_pt, upper_pt, True)	 """	    
+
+########################################
+#    IMAGE-RELATED HELPER METHODS      #
+########################################
+
+""" thresholds an image for a certain range of hsv values """ #FIXME: does eroding and dilating cause a big performance hit?
+def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
+    cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
+    cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
+    cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
+    cv.Erode(threshImg, threshImg, None, 1)    
+    cv.Dilate(threshImg, threshImg, None, 2)
+    cv.Erode(threshImg, threshImg, None, 1)
+    cv.Dilate(threshImg, threshImg, None, 2)
+    cv.Erode(threshImg, threshImg, None, 1)
+    return threshImg
+
+##################
+#   MAIN CLASS   #
+##################
+
+class ColorSegmenter():
+    def __init__(self, left_camera, right_camera):
+        self.leftInfo = self.rightInfo = None
+        self.foundColorLeft = False
+        self.foundColorRight = False
+        self.listener = tf.TransformListener()
+	self.bridge = cv_bridge.CvBridge()
+        rospy.Subscriber('/%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
+        rospy.Subscriber('/%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
+        rospy.Subscriber('/%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
+        rospy.Subscriber('/%s/camera_info'%right_camera, CameraInfo, self.rightInfoCallback)
+	self.quat_pub = rospy.Publisher('tape_orientation', Quaternion)
+	self.pose_pub = rospy.Publisher('tape_pose', PoseStamped)
+	self.left_orange_found = False
+	self.left_blue_found = False
+	self.right_orange_found = False
+	self.right_blue_found = False
+	self.prev_quat = None
+	self.blue_left_lower_pt = None
+	self.blue_left_upper_pt = None
+	self.blue_right_lower_pt = None
+	self.blue_right_upper_pt = None
+	self.orange_left_lower_pt = None
+	self.orange_left_upper_pt = None
+	self.orange_right_lower_pt = None
+	self.orange_right_upper_pt = None
+
+        self.prevQuaternion = None
+    
+    ################################
+    #   SUBSCRIBER BOUND METHODS   #
+    ################################
+    def leftInfoCallback(self, info):
+	""" saves the info for the left camera	"""
+        self.leftInfo = info
+
+    def rightInfoCallback(self, info):
+	""" saves the info for the right camera	"""
+        self.rightInfo = info
+
+    def leftImageCallback(self, image):
+	""" """
+	left_img, left_blue, left_orange = self.process(image, "left")
+	cv.ShowImage("left ROI", left_img)
+	cv.ShowImage("left blue", left_blue)
+	cv.ShowImage("left orange", left_orange)
+	cv.WaitKey(3)
+	self.handleBoth()
+
+    def rightImageCallback(self, image):
+	""" """
+	right_img, right_blue, right_orange = self.process(image, "right")
+	cv.ShowImage("right ROI", right_img)
+	cv.ShowImage("right blue", right_blue)
+	cv.ShowImage("right orange", right_orange)
+	cv.WaitKey(3)
+	self.handleBoth()
+
+    def determineROI(self, flag):
+	width = 250
+	height = 250
+	pose = tfx.pose([0,0,0], [0,0,0,1], frame='/tool_L', stamp=rospy.Time.now())
+	#if flag == "left":
+	tf_tool_to_cam = tfx.lookupTransform('/left_optical_frame','/tool_L',wait=10)
+	#elif flag == "right":
+	#    tf_tool_to_cam = tfx.lookupTransform('/right_optical_frame','/tool_L',wait=10)	
+	pose = tf_tool_to_cam * pose
+        stereoModel = image_geometry.StereoCameraModel()
+        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+	(u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(pose.position.list)
+	ROI_left = ((int(u_l-width), int(v_l-height)), (int(u_l+width), int(v_l+height)))
+	ROI_right= ((int(u_r-width), int(v_r-height)), (int(u_r+width), int(v_r+height)))
+	#print "LEFT CENTER : "+str(u_l)+", "+str(v_l)
+	#print "RIGHT CENTER: "+str(u_r)+", "+str(v_r)
+	return ROI_left, ROI_right, (u_l, v_l), (u_r, v_r)
+	
+    def addOffset(self, pt, xOffset, yOffset):
+        if type(pt) == tuple:
+            return (pt[0]+xOffset,pt[1]+yOffset)
+
+        return pt
+
+    def process(self, image, flag):
+	"""
+	thresholds the image for a certain hsv range and returns the coordinates of the centroid, 
+	and the coordinates of the closest point to the centroid
+	"""
+	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")
+	ROI_left, ROI_right, pixelLeft, pixelRight = self.determineROI(flag)
+	if flag == "left":
+	    ROI = ROI_left
+	    pixel = pixelLeft
+	elif flag == "right":
+	    ROI = ROI_right
+            pixel = pixelRight
+	#print "ROI"
+	#print ROI
+	#print "PIXEL"
+	#print pixel
+        heightROI = 250
+        widthROI = 250
+        heightOffset = int(pixel[1]) - heightROI
+        widthOffset = int(pixel[0]) - widthROI
+	cv_image = cv_image[heightOffset:heightOffset+2*heightROI, widthOffset:widthOffset+2*widthROI]
+	hsvImg = cv.CreateImage(cv.GetSize(cv_image),8,3)
+	orangeThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
+	orangeThreshImg = threshold(cv_image, hsvImg, orangeThreshImg, ORANGE_LOWER, ORANGE_UPPER)
+	blueThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
+	blueThreshImg = threshold(cv_image, hsvImg, blueThreshImg, BLUE_LOWER, BLUE_UPPER)
+	blue_contours = find_contours(blueThreshImg, "blue") #FIXME remove later
+	orange_contours = find_contours(orangeThreshImg, "orange") #FIXME remove later
+	#cv.ShowImage("orange", orangeThreshImg)
+	#cv.ShowImage("blue", blueThreshImg)
+	#cv.WaitKey(3)
+	if flag=="left":
+	    self.blue_left_lower_pt, self.blue_left_upper_pt, self.left_blue_found = find_endpoints(blue_contours)
+	    self.orange_left_lower_pt, self.orange_left_upper_pt, self.left_orange_found = find_endpoints(orange_contours)
+	    #self.blue_left_lower_pt, self.blue_left_upper_pt, self.left_blue_found = find_endpoints(blueThreshImg)
+	    #self.orange_left_lower_pt, self.orange_left_upper_pt, self.left_orange_found = find_endpoints(orangeThreshImg)
+            self.blue_left_lower_pt = self.addOffset(self.blue_left_lower_pt, widthOffset, heightOffset)
+            self.blue_left_upper_pt = self.addOffset(self.blue_left_upper_pt, widthOffset, heightOffset)
+            self.orange_left_lower_pt = self.addOffset(self.orange_left_lower_pt, widthOffset, heightOffset)
+            self.orange_left_upper_pt = self.addOffset(self.orange_left_upper_pt, widthOffset, heightOffset)
+        elif flag=="right":
+	    self.blue_right_lower_pt, self.blue_right_upper_pt, self.right_blue_found = find_endpoints(blue_contours)
+	    self.orange_right_lower_pt, self.orange_right_upper_pt, self.right_orange_found = find_endpoints(orange_contours)
+	    #self.blue_right_lower_pt, self.blue_right_upper_pt, self.right_blue_found = find_endpoints(blueThreshImg)
+	    #self.orange_right_lower_pt, self.orange_right_upper_pt, self.right_orange_found = find_endpoints(orangeThreshImg)
+            self.blue_right_lower_pt = self.addOffset(self.blue_right_lower_pt, widthOffset, heightOffset)
+            self.blue_right_upper_pt = self.addOffset(self.blue_right_upper_pt, widthOffset, heightOffset)
+            self.orange_right_lower_pt = self.addOffset(self.orange_right_lower_pt, widthOffset, heightOffset)
+            self.orange_right_upper_pt = self.addOffset(self.orange_right_upper_pt, widthOffset, heightOffset)
+        return cv_image, blueThreshImg, orangeThreshImg
+
+
+    def handleBoth(self):
+	""" returns the unit vector corresponding to the orientation of the colored tape """
+	#found = (self.blue_left_lower_pt != None and self.blue_right_lower_pt != None and self.blue_left_upper_pt != None and self.blue_right_upper_pt != None and self.orange_left_lower_pt != None and self.orange_right_lower_pt != None and self.orange_left_upper_pt != None and self.orange_right_upper_pt != None)
+	found = self.left_orange_found and self.left_blue_found and self.right_orange_found and self.left_orange_found
+	if found:
+	    blue_lower_pt = self.convertStereo(self.blue_left_lower_pt[0], self.blue_left_lower_pt[1], math.fabs(self.blue_left_lower_pt[0] - self.blue_right_lower_pt[0]))
+	    blue_upper_pt = self.convertStereo(self.blue_left_upper_pt[0], self.blue_left_upper_pt[1], math.fabs(self.blue_left_upper_pt[0] - self.blue_right_upper_pt[0]))
+	    orange_lower_pt = self.convertStereo(self.orange_left_lower_pt[0], self.orange_left_lower_pt[1], math.fabs(self.orange_left_lower_pt[0] - self.orange_right_lower_pt[0]))
+	    orange_upper_pt = self.convertStereo(self.orange_left_upper_pt[0], self.orange_left_lower_pt[1], math.fabs(self.orange_left_upper_pt[0] - self.orange_right_upper_pt[0]))
+	    #print "ENDPOINTS"
+	    #print blue_lower_pt
+	    #print blue_upper_pt
+	    #print orange_lower_pt
+	    #print orange_upper_pt	    
+	    p = Point()
+	    position = ((blue_lower_pt[0]+blue_upper_pt[0]+orange_lower_pt[0]+orange_upper_pt[0])/4, (blue_lower_pt[1]+blue_upper_pt[1]+orange_lower_pt[1]+orange_upper_pt[1])/4, (blue_lower_pt[2]+blue_upper_pt[2]+orange_lower_pt[2]+orange_upper_pt[2])/4)
+	    p.x = position[0]
+	    p.y = position[1]
+	    p.z = position[2]
+
+	    blue_vector = []
+	    orange_vector = []
+	    for i in range(0, 3):
+		blue_vector.append(blue_upper_pt[i] - blue_lower_pt[i])
+		orange_vector.append(orange_upper_pt[i] - orange_lower_pt[i])
+	    #blue_vector = invert_vector(blue_vector)
+	    #orange_vector = invert_vector(orange_vector)
+	    #print "BLUE_VECTOR: "+str(blue_vector)
+	    #print "ORANGE_VECTOR: "+str(orange_vector)
+	    quat = self.get_orientation_from_lines(blue_vector, orange_vector)
+	    tb = tfx.tb_angles(quat)
+	    q = Quaternion()
+	    q.x = quat[0]
+	    q.y = quat[1]
+	    q.z = quat[2]
+	    q.w = quat[3]
+
+            if self.prevQuaternion == None:
+                self.prevQuaternion = q
+            else:
+                prevQuat = tfx.tb_angles(self.prevQuaternion).msg
+                currQuat = tfx.tb_angles(q).msg
+
+                angle = self.angleBetweenQuaternions(currQuat, prevQuat)
+                #rospy.loginfo(angle)
+                #if angle > 90:
+                #    rospy.loginfo('negative dot')
+                #    currQuat = list(tfx.tb_angles(currQuat).quaternion)
+                #    currQuat[0] = -currQuat[0]
+                #    currQuat[1] = -currQuat[1]
+                #    currQuat[2] = -currQuat[2]
+
+                q = prevQuat = tfx.tb_angles(currQuat).msg
+                
+                
+
+	    pose = PoseStamped()
+	    pose.pose.position = p
+	    pose.pose.orientation = q
+	    pose.header.frame_id = self.leftInfo.header.frame_id
+	    pose.header.stamp = rospy.Time.now()
+	    self.quat_pub.publish(q)
+	    self.pose_pub.publish(pose)
+
+    ##############################
+    #       HELPER METHODS       #
+    ############################## 
+
+    def get_orientation_from_lines(self, v0, v1):
+        """
+        v0 and v1 are vectors representing two lines
+        that are KNOWN to be in the same plane
+        """
+        v0, v1 = np.array(v0), np.array(v1)
+        v0 = v0 / np.linalg.norm(v0) 
+        v1 = v1 / np.linalg.norm(v1) 
+        n = np.cross(v0, v1)
+        n = n / np.linalg.norm(n)
+        v1 = np.cross(n, v0)
+        v1 = v1 / np.linalg.norm(v1)
+        #rospy.loginfo('v0')
+        #rospy.loginfo(v0)
+	#rospy.loginfo('v1')
+        #rospy.loginfo(v1)
+	#rospy.loginfo('normal')
+        #rospy.loginfo(n)
+        #raw_input()
+	rotMat = np.vstack((n, v1, v0)).T
+	#rotMat = np.vstack((v0, n, v1)).T
+	matrix = rotMat
+	#matrix = linalg.orth(rotMat)
+        tbRot = tfx.tb_angles(matrix).matrix	
+	tbRot = self.rotate(45, "yaw", tbRot)
+	tbRot = self.rotate(60, "pitch", tbRot)
+	tbRot = self.rotate(45, "roll", tbRot)
+        quat = tfx.tb_angles(tbRot).quaternion
+        return list(quat)
+
+    def rotate(self, angle, axis, matrix):
+	if axis == "yaw":
+	    rot = tfx.tb_angles(angle, 0, 0).matrix
+	elif axis == "pitch":
+	    rot = tfx.tb_angles(0, angle, 0).matrix
+	elif axis == "roll":
+	    rot = tfx.tb_angles(0, 0, angle).matrix
+	#print "ROTATION"
+	#print rot
+	#print matrix
+	return rot*matrix
+
+    def convertStereo(self, u, v, disparity):
+        """
+        Converts two pixel coordinates u and v along with the disparity to give PointStamped       
+        """
+        stereoModel = image_geometry.StereoCameraModel()
+        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+        (x,y,z) = stereoModel.projectPixelTo3d((u,v), disparity)
+        return (x,y,z)
+
+    def angleBetweenQuaternions(self, quat0, quat1):
+        """
+        Returns angle between quat0 and quat1 in degrees
+        """
+        q0 = np.array([quat0.x, quat0.y, quat0.z, quat0.w])
+        q1 = np.array([quat1.x, quat1.y, quat1.z, quat1.w])
+
+        try:
+            theta = math.acos(2*np.dot(q0,q1)**2 - 1)
+        except ValueError:
+            return 0
+
+        theta = theta*(180.0/math.pi)
+            
+        return theta
+
+
+
+##############################
+#      EXECUTION CODE        #
+##############################
+
+def main():
+    rospy.init_node('color_segmenter',anonymous=True)
+    rospy.sleep(5)
+    left_camera = 'left'
+    right_camera = 'right'
+    gs = ColorSegmenter(left_camera, right_camera)
+    rospy.spin()
+
+def test_cache():
+    rospy.init_node('test_cache',anonymous=True)
+    rospy.sleep(1)
+    listener = tf.TransformListener()
+
+    f0 = '/left_optical_frame'
+    f1 = '/0_link'
+    
+    while not rospy.is_shutdown():
+        try:
+            common = listener.getLatestCommonTime(f0, f1)
+            listener.waitForTransform(f0,f1,common,rospy.Duration(4.0))
+            break
+        except tf.Exception:
+            rospy.loginfo('tf exception')
+
+        rospy.sleep(.1)
+        
+    rospy.loginfo('found it!')
+
+if __name__ == '__main__':
+    main()
+    
+
