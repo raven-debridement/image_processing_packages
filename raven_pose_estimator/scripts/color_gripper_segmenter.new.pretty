@@ -5,7 +5,6 @@ import roslib
 roslib.load_manifest('raven_pose_estimator')
 import rospy
 
-from raven_pose_estimator.srv import *
 import cv
 import cv2
 import numpy as np
@@ -29,34 +28,27 @@ import code
 
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
-########################################
-#             CONSTANTS                #
-########################################
+########################################################################################################################
+#               CONSTANTS                                                                                              #
+########################################################################################################################
 
-TRANSLATION_R2L = (-0.05137, 0, 0.00136) 
+TRANSLATION_R2L = (-0.05137, 0, 0.00136) #narrow baseline
 ROTATION_R2L = (0, -0.108380311, 0)
-#TRANSLATION_R2L = (-0.129296, 0, 0.00136124)
+#TRANSLATION_R2L = (-0.129296, 0, 0.00136124) #wide baseline
 #ROTATION_R2L = (0,0.104719755,0)
-ORANGE_LOWER = cv.Scalar( 7, 80, 50)
-ORANGE_UPPER = cv.Scalar( 14, 255, 255)
-#BLUE_LOWER = cv.Scalar(29,0, 80)
-#BLUE_UPPER = cv.Scalar(39,255, 255)
-BLUE_LOWER = cv.Scalar(112, 150, 50)
-BLUE_UPPER = cv.Scalar(118, 255, 255)
-RED_LOWER = cv.Scalar(0, 100, 100)
-RED_UPPER = cv.Scalar(5, 255, 255)
+ORANGE_LOWER = cv.Scalar( 8, 80, 50)
+ORANGE_UPPER = cv.Scalar( 13, 255, 255)
+BLUE_LOWER = cv.Scalar(28,0, 80)
+BLUE_UPPER = cv.Scalar(35,255, 255)
 SHOW_IMAGES = True
 WIDTH_ROI = 250
 HEIGHT_ROI = 250
-SLERP = True
+SLERP = False
 SLERP_CONSTANT = 0.2
-PRINT_MESSAGES = False
 
-
-
-########################################
-#     3D GEOMETRY HELPER METHODS       #
-########################################
+########################################################################################################################
+#        3D GEOMETRY HELPER METHODS                                                                                    #
+######################################################################################################################## 
 
 def angleBetweenQuaternions(quat0, quat1):
     """ 
@@ -69,7 +61,6 @@ def angleBetweenQuaternions(quat0, quat1):
     return theta
 
 
-
 def order_points(p1, p2):
     """ 
     Takes in two points of form (x,y) and orders them according to y-coordinate value 
@@ -80,7 +71,6 @@ def order_points(p1, p2):
 	return p2,p1
     else:
 	return p1,p2
-
 
 
 def find_endpoints(contours):
@@ -126,25 +116,6 @@ def slerp(q1, q2, t):
     return result
 
 
-########################################
-#    IMAGE-RELATED HELPER METHODS      #
-########################################
-
-def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
-    """ 
-    Thresholds an image for a certain range of hsv values 
-    """ 
-    cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
-    cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
-    cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
-    #cv.Dilate(threshImg, threshImg, None, 1)
-    cv.Erode(threshImg, threshImg, None, 2)    
-    cv.Dilate(threshImg, threshImg, None, 1)
-    cv.Erode(threshImg, threshImg, None, 1)
-    cv.Dilate(threshImg, threshImg, None, 2)
-    #cv.Erode(threshImg, threshImg, None, 1)
-    return threshImg
-
 def average_vectors(v1, v2):
     """
     Finds the average of two vectors v1 and v2
@@ -153,6 +124,63 @@ def average_vectors(v1, v2):
     for i in range(0, len(v1)):
 	result.append((v1[i]+v2[i])/2)
     return result
+
+
+def average_points(point_list):
+    """
+    Finds the average of a list of points of the form (x,y) or (x,y,z)
+    """
+    result = []
+    length = len(point_list)
+    coordinates = len(point_list[0])
+    for i in range(0, coordinates):
+	s = 0
+	for j in range(0, length):
+	    s += point_list[j][i]
+	result.append(s/length)
+    return result
+
+
+def make_point(position):
+    """
+    Given a position (x,y,z), makes a ROS point message
+    """
+    p = Point()
+    p.x = position[0]
+    p.y = position[1]
+    p.z = position[2]
+    return p
+
+
+def make_pose(p, q, frame_id):
+    """
+    Given a position and orientation and frame id, makes a ROS posestamped message
+    """
+    pose = PoseStamped()
+    pose.pose.position = p
+    pose.pose.orientation = q
+    pose.header.frame_id = frame_id
+    pose.header.stamp = rospy.Time.now()
+    return pose
+
+########################################################################################################################
+#           IMAGE-RELATED HELPER METHODS                                                                               #
+########################################################################################################################
+
+def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
+    """ 
+    Thresholds an image for a certain range of hsv values 
+    """ 
+    cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
+    cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
+    cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
+    cv.Erode(threshImg, threshImg, None, 1)    
+    cv.Dilate(threshImg, threshImg, None, 2)
+    cv.Erode(threshImg, threshImg, None, 1)
+    cv.Dilate(threshImg, threshImg, None, 2)
+    cv.Erode(threshImg, threshImg, None, 1)
+    return threshImg
+
 
 def find_contours(im, name):
     """ 
@@ -165,16 +193,15 @@ def find_contours(im, name):
 
 
 
-##################
-#   MAIN CLASS   #
-##################
+#######################################################################################################################
+#               MAIN CLASS                                                                                            #
+#######################################################################################################################
 
 class ColorSegmenter():
     def __init__(self, left_camera, right_camera):
         self.leftInfo = self.rightInfo = None
         self.listener = tf.TransformListener()
 	self.bridge = cv_bridge.CvBridge()
-	self.leftImg = self.rightImg = None
 
         rospy.Subscriber('/%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
         rospy.Subscriber('/%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
@@ -184,8 +211,7 @@ class ColorSegmenter():
 	self.quat_pub = rospy.Publisher('tape_orientation', Quaternion)
 	self.pose_pub = rospy.Publisher('tape_pose', PoseStamped)
 	self.polygon_pub = rospy.Publisher('polygon', PolygonStamped)
-        
- 	self.red_service = rospy.Service('thresh_red', ThreshRed, self.threshRed)
+
 
 	self.left_orange_found = False
 	self.left_blue_found = False
@@ -218,13 +244,12 @@ class ColorSegmenter():
 	Saves the info for the right camera	
 	"""
         self.rightInfo = info
-	
+
 
     def leftImageCallback(self, image):
 	""" 	
 	Takes in the image from the left camera and processes it 
 	"""
-	self.leftImg = image
 	left_img, left_blue, left_orange, left_blue_contour, left_orange_contour, self.left_blue_found, self.left_orange_found = self.process(image, "left")
 	if SHOW_IMAGES:
 	    cv.ShowImage("left ROI", left_img)
@@ -234,21 +259,12 @@ class ColorSegmenter():
 	self.handleBoth()
 	self.left_blue_found = self.left_orange_found = False
 
-    def threshRed(self):
-	leftThresh = threshold(self.leftImg, self.leftImg, self.leftImg, RED_LOWER, RED_UPPER)
-	rightThresh = threshold(self.rightImg, self.rightImg, self.rightImg, RED_LOWER, RED_UPPER)
-	left_contours = find_contours(leftThresh, "left_thresh")
-	right_contours = find_contours(rightThresh, "right_thresh")
-	if len(left_contours) > 0 and len(right_contours)>0:
-	    return ThreshRedResponse(1)
-	return ThreshRedResponse(0)
-	
+
 
     def rightImageCallback(self, image):
 	""" 
 	Takes in the image from the right camera and processes it 
 	"""
-	self.rightImg = image
 	right_img, right_blue, right_orange, right_blue_contour, right_orange_contour, self.right_blue_found, self.right_orange_found = self.process(image, "right")
 	if SHOW_IMAGES:
 	    cv.ShowImage("right ROI", right_img)
@@ -266,19 +282,7 @@ class ColorSegmenter():
 	and the coordinates of the closest point to the centroid
 	"""
 	cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")
-	ROI_left, ROI_right, pixelLeft, pixelRight = self.determineROI(flag)
-	if flag == "left":
-	    ROI = ROI_left
-	    pixel = pixelLeft
-	elif flag == "right":
-	    ROI = ROI_right
-            pixel = pixelRight
-        heightOffset = int(pixel[1]) - HEIGHT_ROI
-        widthOffset = int(pixel[0]) - WIDTH_ROI
-	if heightOffset < 0:
-	    heightOffset = 0
-	if widthOffset < 0:
-	    widthOffset = 0
+	widthOffset, heightOffset = self.determineROI(flag)
 	cv_image = cv_image[heightOffset:heightOffset+2*HEIGHT_ROI, widthOffset:widthOffset+2*WIDTH_ROI]
 	hsvImg = cv.CreateImage(cv.GetSize(cv_image),8,3)
 	orangeThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
@@ -292,22 +296,17 @@ class ColorSegmenter():
 	if flag=="left":
 	    self.blue_left_lower_pt, self.blue_left_upper_pt, left_blue_found = find_endpoints(blue_contours)
 	    self.orange_left_lower_pt, self.orange_left_upper_pt, left_orange_found = find_endpoints(orange_contours)
-            self.blue_left_lower_pt = self.addOffset(self.blue_left_lower_pt, widthOffset, heightOffset)
-            self.blue_left_upper_pt = self.addOffset(self.blue_left_upper_pt, widthOffset, heightOffset)
-            self.orange_left_lower_pt = self.addOffset(self.orange_left_lower_pt, widthOffset, heightOffset)
-            self.orange_left_upper_pt = self.addOffset(self.orange_left_upper_pt, widthOffset, heightOffset)
+            self.compensateForROI(flag, widthOffset, heightOffset)
 	    blue_found = left_blue_found
 	    orange_found = left_orange_found
         elif flag=="right":
 	    self.blue_right_lower_pt, self.blue_right_upper_pt, right_blue_found = find_endpoints(blue_contours)
 	    self.orange_right_lower_pt, self.orange_right_upper_pt, right_orange_found = find_endpoints(orange_contours)
-            self.blue_right_lower_pt = self.addOffset(self.blue_right_lower_pt, widthOffset, heightOffset)
-            self.blue_right_upper_pt = self.addOffset(self.blue_right_upper_pt, widthOffset, heightOffset)
-            self.orange_right_lower_pt = self.addOffset(self.orange_right_lower_pt, widthOffset, heightOffset)
-            self.orange_right_upper_pt = self.addOffset(self.orange_right_upper_pt, widthOffset, heightOffset)
+            self.compensateForROI(flag, widthOffset, heightOffset)
 	    blue_found = right_blue_found
 	    orange_found = right_orange_found
         return cv_image, blueThreshImg, orangeThreshImg, blueContourImg, orangeContourImg, blue_found, orange_found
+
 
 
     def handleBoth(self):
@@ -316,31 +315,13 @@ class ColorSegmenter():
 	orientation and position of the gripper 
 	"""
 	try:
-	    found = self.left_orange_found and self.left_blue_found and self.right_orange_found and self.right_blue_found
-	    if PRINT_MESSAGES:
-	        print "found"
-	        print "left_orange: "+str(self.left_orange_found)
-	        print "right_orange: "+str(self.right_orange_found)
-	        print "left_blue: "+str(self.left_blue_found)
-	        print "right_blue: "+str(self.right_blue_found)
-	    if found:
-	        blue_lower_pt = self.convertStereo(self.blue_left_lower_pt[0], self.blue_left_lower_pt[1], math.fabs(self.blue_left_lower_pt[0] - self.blue_right_lower_pt[0]))
-	        blue_upper_pt = self.convertStereo(self.blue_left_upper_pt[0], self.blue_left_upper_pt[1], math.fabs(self.blue_left_upper_pt[0] - self.blue_right_upper_pt[0]))
-	        orange_lower_pt = self.convertStereo(self.orange_left_lower_pt[0], self.orange_left_lower_pt[1], math.fabs(self.orange_left_lower_pt[0] - self.orange_right_lower_pt[0]))
-	        orange_upper_pt = self.convertStereo(self.orange_left_upper_pt[0], self.orange_left_upper_pt[1], math.fabs(self.orange_left_upper_pt[0] - self.orange_right_upper_pt[0]))
-	        p = Point()
-	        position = ((blue_lower_pt[0]+blue_upper_pt[0]+orange_lower_pt[0]+orange_upper_pt[0])/4, (blue_lower_pt[1]+blue_upper_pt[1]+orange_lower_pt[1]+orange_upper_pt[1])/4, (blue_lower_pt[2]+blue_upper_pt[2]+orange_lower_pt[2]+orange_upper_pt[2])/4)
-	        p.x = position[0]
-	        p.y = position[1]
-	        p.z = position[2]
-
-	        polygon_points = [blue_lower_pt, blue_upper_pt, orange_upper_pt, orange_lower_pt]
-	        polygon_points = [Point32(*x) for x in polygon_points]
-	        polygon = PolygonStamped()
-	        polygon.polygon.points = polygon_points
-	        polygon.header.frame_id = "left_optical_frame"
-	        polygon.header.stamp = rospy.Time.now()
-	        self.polygon_pub.publish(polygon)
+	    found = self.left_orange_found and self.left_blue_found and self.right_orange_found and self.left_orange_found
+	    if found and type(self.blue_left_lower_pt) is not int and type(self.blue_left_upper_pt) is not int and type(self.orange_left_lower_pt) is not int and type(self.orange_left_upper_pt) is not int:
+		(blue_lower_pt, blue_upper_pt, orange_lower_pt, orange_upper_pt) = self.convertPointsTo3DSpace
+		points = [blue_lower_pt, blue_upper_pt, orange_upper_pt, orange_lower_pt]
+	        p = average_points(points)
+	        if POLYGON:
+		    self.publishPolygon(p)		
 	        blue_vector = []
 	        orange_vector = []
 	        for i in range(0, 3):
@@ -353,7 +334,6 @@ class ColorSegmenter():
 	        q.y = quat[1]
 	        q.z = quat[2]
 	        q.w = quat[3]
-
                 if self.prevQuaternion == None:
                     self.prevQuaternion = q
                 else:
@@ -365,35 +345,40 @@ class ColorSegmenter():
 	            else:
 		        q = currQuat
 	 	        self.prevQuaternion = q
-	        pose = PoseStamped()
-	        pose.pose.position = p
-	        pose.pose.orientation = q
-	        pose.header.frame_id = self.leftInfo.header.frame_id
-	        pose.header.stamp = rospy.Time.now()
-	        self.quat_pub.publish(q)
+	        pose = make_pose(p, q, self.leftInfo.header.frame_id)
 	        self.pose_pub.publish(pose)
-		if PRINT_MESSAGES:		
-	             print "WORKING FINE"
 	    else:
-		#self.pose_pub.publish(self.prevQuaternion) #if the points aren't detected, continue publishing the last known location
-		if PRINT_MESSAGES:		
-		     print "POINTS NOT DETECTED"
-	except (TypeError, ValueError) as e:
-	    if PRINT_MESSAGES:
-   	        print "CAUGHT ERROR"	
-	        print e
-	    #self.pose_pub.publish(self.prevQuaternion) #if some kind of error comes up, continue publishing the last known location #FIXME we may want to change this behavior
+		self.pose_pub.publish(self.prevQuaternion) #if the points aren't detected, continue publishing the last known location
+	except (TypeError, ValueError):
+	    self.pose_pub.publish(self.prevQuaternion) #if some kind of error comes up, continue publishing the last known location #FIXME we may want to change this behavior
 	    pass
-
 
 
     ##############################
     #       HELPER METHODS       #
     ############################## 
 
-    ########################################
-    #       RED THRESHOLD SERVER           #
-    ########################################
+    def convertPointsTo3DSpace(self):	
+ 	"""
+	Converts the pixel points to points in 3D space
+	"""
+	blue_lower_pt = self.convertStereo(self.blue_left_lower_pt[0], self.blue_left_lower_pt[1], math.fabs(self.blue_left_lower_pt[0] - self.blue_right_lower_pt[0]))
+	blue_upper_pt = self.convertStereo(self.blue_left_upper_pt[0], self.blue_left_upper_pt[1], math.fabs(self.blue_left_upper_pt[0] - self.blue_right_upper_pt[0]))
+	orange_lower_pt = self.convertStereo(self.orange_left_lower_pt[0], self.orange_left_lower_pt[1], math.fabs(self.orange_left_lower_pt[0] - self.orange_right_lower_pt[0]))
+	orange_upper_pt = self.convertStereo(self.orange_left_upper_pt[0], self.orange_left_upper_pt[1], math.fabs(self.orange_left_upper_pt[0] - self.orange_right_upper_pt[0]))
+	return (blue_lower_pt, blue_upper_pt, orange_lower_pt, orange_upper_pt)
+
+
+    def publishPolygon(self, polygon_points):
+	"""
+	Publishes a polygon given a list of points for visualization purposes
+	"""
+	polygon_points = [Point32(*x) for x in polygon_points]
+	polygon = PolygonStamped()
+	polygon.polygon.points = polygon_points
+	polygon.header.frame_id = "left_optical_frame"
+	polygon.header.stamp = rospy.Time.now()
+	self.polygon_pub.publish(polygon)
 
 
     def determineROI(self, flag):
@@ -409,7 +394,19 @@ class ColorSegmenter():
 	(u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(pose.position.list)
 	ROI_left = ((int(u_l-WIDTH_ROI), int(v_l-HEIGHT_ROI)), (int(u_l+WIDTH_ROI), int(v_l+HEIGHT_ROI)))
 	ROI_right= ((int(u_r-WIDTH_ROI), int(v_r-HEIGHT_ROI)), (int(u_r+WIDTH_ROI), int(v_r+HEIGHT_ROI)))
-	return ROI_left, ROI_right, (u_l, v_l), (u_r, v_r)
+	if flag == "left":
+	    ROI = ROI_left
+	    pixel = pixelLeft
+	elif flag == "right":
+	    ROI = ROI_right
+            pixel = pixelRight
+        heightOffset = int(pixel[1]) - HEIGHT_ROI
+        widthOffset = int(pixel[0]) - WIDTH_ROI
+	if heightOffset < 0:
+	    heightOffset = 0
+	if widthOffset < 0:
+	    widthOffset = 0
+	return widthOffset, heightOffset
 	
 
     def addOffset(self, pt, xOffset, yOffset):
@@ -472,9 +469,25 @@ class ColorSegmenter():
         return (x,y,z)
 
 
-##############################
-#      EXECUTION CODE        #
-##############################
+    def compensateForROI(self, flag, widthOffset, heightOffset):
+	"""
+	Compensates for the ROI indexing in the image
+	"""
+	if flag=="left":
+	    self.blue_left_lower_pt = self.addOffset(self.blue_left_lower_pt, widthOffset, heightOffset)
+            self.blue_left_upper_pt = self.addOffset(self.blue_left_upper_pt, widthOffset, heightOffset)
+            self.orange_left_lower_pt = self.addOffset(self.orange_left_lower_pt, widthOffset, heightOffset)
+            self.orange_left_upper_pt = self.addOffset(self.orange_left_upper_pt, widthOffset, heightOffset)
+	elif flag == "right":
+	    self.blue_right_lower_pt = self.addOffset(self.blue_right_lower_pt, widthOffset, heightOffset)
+            self.blue_right_upper_pt = self.addOffset(self.blue_right_upper_pt, widthOffset, heightOffset)
+            self.orange_right_lower_pt = self.addOffset(self.orange_right_lower_pt, widthOffset, heightOffset)
+            self.orange_right_upper_pt = self.addOffset(self.orange_right_upper_pt, widthOffset, heightOffset)
+
+
+##############################################################################################################
+#              EXECUTION CODE                                                                                #
+##############################################################################################################
 
 def main():
     rospy.init_node('color_segmenter',anonymous=True)
