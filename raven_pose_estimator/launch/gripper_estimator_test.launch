@@ -1,0 +1,8 @@
+<!-- a general launch file that should work on most systems -->
+
+<launch>
+    <!--<include file="$(find prosilica_camera)/launch/stereo.launch" />-->
+    <include file="$(find master-control)/launch/stereo.launch" />
+    <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>    
+    <node name="gripper_estimator" pkg="raven_pose_estimator" type="color_gripper_segmenter.new" output="screen" />
+</launch>
