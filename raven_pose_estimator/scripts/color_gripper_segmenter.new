@@ -37,13 +37,15 @@ TRANSLATION_R2L = (-0.05137, 0, 0.00136)
 ROTATION_R2L = (0, -0.108380311, 0)
 #TRANSLATION_R2L = (-0.129296, 0, 0.00136124)
 #ROTATION_R2L = (0,0.104719755,0)
-ORANGE_LOWER = cv.Scalar( 7, 80, 50)
+ORANGE_LOWER = cv.Scalar( 7, 80, 50) # THESE ARE THE ORANGE VALUES
 ORANGE_UPPER = cv.Scalar( 14, 255, 255)
-#BLUE_LOWER = cv.Scalar(29,0, 80)
+#ORANGE_LOWER = cv.Scalar(90, 150, 30) # THESE ARE THE GREEN VALUES
+#ORANGE_UPPER = cv.Scalar(96, 255, 255)
+#BLUE_LOWER = cv.Scalar(29,0, 80) # THESE ARE THE YELLOW VALUES
 #BLUE_UPPER = cv.Scalar(39,255, 255)
-BLUE_LOWER = cv.Scalar(112, 150, 50)
+BLUE_LOWER = cv.Scalar(112, 150, 50) # THESE ARE THE DARK BLUE VALUES
 BLUE_UPPER = cv.Scalar(118, 255, 255)
-RED_LOWER = cv.Scalar(0, 100, 100)
+RED_LOWER = cv.Scalar(0, 100, 30)
 RED_UPPER = cv.Scalar(5, 255, 255)
 SHOW_IMAGES = True
 WIDTH_ROI = 250
@@ -95,8 +97,11 @@ def find_endpoints(contours):
                 cx = int(moments['m10']/moments['m00'])     
                 cy = int(moments['m01']/moments['m00'])        
 	        points.append((cx, cy))
-	upper_pt, lower_pt = order_points(points[0], points[1])
-	return (lower_pt, upper_pt, True)
+	try:
+	    upper_pt, lower_pt = order_points(points[0], points[1])
+	    return (lower_pt, upper_pt, True)
+	except IndexError as e:
+	    return (0,0,False)	
     else:
 	return (0,0,False)
 
@@ -137,11 +142,11 @@ def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
     cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
     cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
     cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
-    #cv.Dilate(threshImg, threshImg, None, 1)
+    cv.Dilate(threshImg, threshImg, None, 1)
     cv.Erode(threshImg, threshImg, None, 2)    
     cv.Dilate(threshImg, threshImg, None, 1)
     cv.Erode(threshImg, threshImg, None, 1)
-    cv.Dilate(threshImg, threshImg, None, 2)
+    cv.Dilate(threshImg, threshImg, None, 1)
     #cv.Erode(threshImg, threshImg, None, 1)
     return threshImg
 
@@ -224,7 +229,6 @@ class ColorSegmenter():
 	""" 	
 	Takes in the image from the left camera and processes it 
 	"""
-	self.leftImg = image
 	left_img, left_blue, left_orange, left_blue_contour, left_orange_contour, self.left_blue_found, self.left_orange_found = self.process(image, "left")
 	if SHOW_IMAGES:
 	    cv.ShowImage("left ROI", left_img)
@@ -233,22 +237,12 @@ class ColorSegmenter():
 	    cv.WaitKey(3)
 	self.handleBoth()
 	self.left_blue_found = self.left_orange_found = False
-
-    def threshRed(self):
-	leftThresh = threshold(self.leftImg, self.leftImg, self.leftImg, RED_LOWER, RED_UPPER)
-	rightThresh = threshold(self.rightImg, self.rightImg, self.rightImg, RED_LOWER, RED_UPPER)
-	left_contours = find_contours(leftThresh, "left_thresh")
-	right_contours = find_contours(rightThresh, "right_thresh")
-	if len(left_contours) > 0 and len(right_contours)>0:
-	    return ThreshRedResponse(1)
-	return ThreshRedResponse(0)
 	
 
     def rightImageCallback(self, image):
 	""" 
 	Takes in the image from the right camera and processes it 
 	"""
-	self.rightImg = image
 	right_img, right_blue, right_orange, right_blue_contour, right_orange_contour, self.right_blue_found, self.right_orange_found = self.process(image, "right")
 	if SHOW_IMAGES:
 	    cv.ShowImage("right ROI", right_img)
@@ -258,6 +252,33 @@ class ColorSegmenter():
 	self.handleBoth()
 	self.right_blue_found = self.right_orange_found = False
 
+
+    def threshRed(self, i):
+	#cv.ShowImage("self.leftImg", self.leftImg)
+	leftImg = cv.CloneMat(self.leftImg)
+	rightImg = cv.CloneMat(self.rightImg)
+	width = cv.GetSize(leftImg)[0]
+	height = cv.GetSize(leftImg)[1]
+	leftImg = leftImg[0:200, :]
+	rightImg = rightImg[0:200, :]
+	if SHOW_IMAGES:
+	    cv.ShowImage("smaller left", leftImg)
+	    cv.ShowImage("smaller right", rightImg)
+	leftThresh = cv.CreateImage(cv.GetSize(leftImg),8,1)
+	rightThresh = cv.CreateImage(cv.GetSize(rightImg),8,1)	
+	leftThresh = threshold(leftImg, leftImg, leftThresh, RED_LOWER, RED_UPPER)
+	rightThresh = threshold(rightImg, rightImg, rightThresh, RED_LOWER, RED_UPPER)
+	if SHOW_IMAGES:
+	    cv.ShowImage("threshleft", leftThresh)
+	    cv.ShowImage("threshRight", rightThresh)
+	    cv.WaitKey(3)
+	left_contours = find_contours(leftThresh, "left_thresh")
+	right_contours = find_contours(rightThresh, "right_thresh")
+	if len(left_contours) > 0 and len(right_contours)>0:
+	    rospy.loginfo(len(left_contours))
+	    rospy.loginfo(len(right_contours))
+	    return ThreshRedResponse(1)
+	return ThreshRedResponse(0)
 
 
     def process(self, image, flag):
@@ -280,6 +301,10 @@ class ColorSegmenter():
 	if widthOffset < 0:
 	    widthOffset = 0
 	cv_image = cv_image[heightOffset:heightOffset+2*HEIGHT_ROI, widthOffset:widthOffset+2*WIDTH_ROI]
+	if flag == "left":
+	    self.leftImg = cv_image
+	elif flag == "right":
+	    self.rightImg = cv_image
 	hsvImg = cv.CreateImage(cv.GetSize(cv_image),8,3)
 	orangeThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
 	orangeThreshImg = threshold(cv_image, hsvImg, orangeThreshImg, ORANGE_LOWER, ORANGE_UPPER)
@@ -360,7 +385,10 @@ class ColorSegmenter():
                     prevQuat = tfx.tb_angles(self.prevQuaternion).msg
                     currQuat = tfx.tb_angles(q).msg
 	            if SLERP:
-		        q = slerp(prevQuat, currQuat, SLERP_CONSTANT)
+			try:
+		            q = slerp(prevQuat, currQuat, SLERP_CONSTANT)
+			except ZeroDivisionError:
+			    q = currQuat
 		        self.prevQuaternion = q
 	            else:
 		        q = currQuat
