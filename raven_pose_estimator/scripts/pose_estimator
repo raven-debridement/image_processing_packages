@@ -4,6 +4,7 @@ import roslib
 roslib.load_manifest('raven_pose_estimator')
 import rospy
 import tf
+import tfx
 import math
 import image_geometry
 from ar_pose.msg import ARMarker
@@ -83,6 +84,8 @@ class PoseEstimator:
 				self.left_poses_dict[marker.id] = marker
 		elif self.marker_type == "CHESS":
 			self.left_pose = left_data
+			#print tfx.pose(self.left_pose.pose)
+			#print tfx.tb_angles(self.left_pose.pose).matrix
 		self.handle_both()
 
 	# waits until there are values in both right_poses_dict and left_poses_dict
@@ -125,6 +128,9 @@ class PoseEstimator:
 
 	# publishes the message with joints and poses
 	def publish(self):
+		#print "data"
+		#print "[%d, %d, %d, %d]"%self.output.pose.pose.orientation.x, self.output.pose.pose.orientation.y, self.output.pose.pose.orientation.z, self.output.pose.pose.orientation.w
+		#print tfx.pose(self.output.pose.pose)
 		self.output_publisher.publish(self.output)
 		if self.marker_type == "AR":
 			self.output = ARMarkers()
@@ -152,11 +158,11 @@ class PoseEstimator:
 		right_quat_stamped.header.frame_id = "right_camera"
 		transformed_orientation = self.transform_listener.transformQuaternion(self.left_frame, right_quat_stamped) 
 		accurate_pose.pose.orientation = slerp(transformed_orientation.quaternion, left.pose.orientation, 0.5) 
-		return accurate_pose
+		return accurate_pose.pose
 
 def main():
-	left_camera = 'left'
-	right_camera = 'right'
+	left_camera = '/stereo/left'
+	right_camera = '/stereo/right'
 	left_poses = 'left_poses'
 	right_poses = 'right_poses'
 	marker_type = 'CHESS'

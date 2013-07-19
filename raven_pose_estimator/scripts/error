@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+# Import required Python code.
+import roslib
+roslib.load_manifest('raven_pose_estimator')
+import rospy
+
+from std_msgs.msg import String
+from sensor_msgs.msg import Image, CameraInfo
+import cv_bridge
+from geometry_msgs.msg import Point, PointStamped, Quaternion, PoseStamped
+import tf
+import image_geometry
+import time
+
+import message_filters
+from threading import Lock
+
+import tf.transformations as tft
+import tfx
+
+import code
+
+
+##################
+#   MAIN CLASS   #
+##################
+
+class ErrorCalculator():
+    def __init__(self):
+	self.tape_orientation = None
+	self.chess_orientation = None
+        rospy.Subscriber('tape_orientation', Quaternion, self.tape_callback)
+        rospy.Subscriber('poses', PoseStamped, self.chess_callback)
+	self.quat_pub = rospy.Publisher('tape_orientation', Quaternion)
+    
+    ################################
+    #   SUBSCRIBER BOUND METHODS   #
+    ################################
+    def tape_callback(self, orientation):
+	self.tape_orientation = orientation
+	self.handleBoth()
+	#self.tape_orientation = None
+
+    def chess_callback(self, pose):
+	self.chess_orientation = pose.pose.orientation  
+	self.handleBoth()
+	#self.chess_orientation = None
+
+    def handleBoth(self):
+	if self.chess_orientation != None and self.tape_orientation != None:
+	    ypr_tape = tfx.tb_angles(self.tape_orientation)
+	    ypr_chess = tfx.tb_angles(self.chess_orientation)
+	    yaw_difference = ypr_tape.yaw_deg - ypr_chess.yaw_deg
+	    pitch_difference = ypr_tape.pitch_deg - ypr_chess.pitch_deg
+	    roll_difference = ypr_tape.roll_deg - ypr_chess.roll_deg
+	    print "TAPE : "+str(ypr_tape)
+	    print "CHESS: "+str(ypr_chess)
+	    print "DIFFERENCE: "+str((yaw_difference, pitch_difference, roll_difference))
+	    print "\n"
+	    
+##############################
+#      EXECUTION CODE        #
+##############################
+
+def main():
+    rospy.init_node('error')
+    gs = ErrorCalculator()
+    rospy.spin()
+
+
+if __name__ == '__main__':
+    main()
+
+
