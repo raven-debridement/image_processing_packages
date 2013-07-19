@@ -2,8 +2,9 @@ import tfx
 import image_geometry
 import rospy
 import cv
+from geometry_msgs.msg import PointStamped, Point
 
-def convertStereo(self, u, v, disparity, info):
+def convertStereo(u, v, disparity, info):
     """
     Converts two pixel coordinates u and v along with the disparity to give PointStamped       
     """
@@ -12,10 +13,10 @@ def convertStereo(self, u, v, disparity, info):
     (x,y,z) = stereoModel.projectPixelTo3d((u,v), disparity)
 
     cameraPoint = PointStamped()
-    cameraPoint.header.frame_id = self.leftInfo.header.frame_id
+    cameraPoint.header.frame_id = info['l'].header.frame_id
     cameraPoint.header.stamp = rospy.Time.now()
     cameraPoint.point = Point(x,y,z)
-
+    return cameraPoint
 
 def determineROI(info):
     width = 250

@@ -10,6 +10,7 @@ import cv
 
 from sensor_msgs.msg import Image, CameraInfo
 from stereo_msgs.msg import DisparityImage
+from geometry_msgs.msg import PointStamped
 import cv_bridge
 
 RED_LOWER_HSV = cv.Scalar(0, 120, 50)
@@ -18,9 +19,9 @@ LOWERHSV = RED_LOWER_HSV
 UPPERHSV = RED_UPPER_HSV
 
 class DisparitySegmenter():
-    def __init__(self, left_camera, right_camera, disparity):
+    def __init__(self, left_camera, right_camera, disparity, topic):
         self.image = {'l': None, 'r': None}
-        self.info = {}
+        self.info = {'l': None, 'r': None}
         self.bridge = cv_bridge.CvBridge()
         self.calculating = False
         self.foundCentroidInLeft = False
@@ -29,20 +30,26 @@ class DisparitySegmenter():
         self.hsvImg = cv.CreateImage((1280, 960), 8, 3)
         self.threshImg = cv.CreateImage((1280, 960), 8, 1)
 
+        self.pointpub = rospy.Publisher(topic, PointStamped)
+
         rospy.Subscriber(left_camera + "/camera_info", CameraInfo, self.leftInfoCallback)
         rospy.Subscriber(right_camera + "/camera_info", CameraInfo, self.rightInfoCallback)
         rospy.Subscriber(disparity, DisparityImage, self.disparityCallback)
 
     def disparityCallback(self, msg):
-        self.disparityImg = msg.image
-        self.minDisparity = msg.minDisparity
-        print 'min disparity' : msg.minDisparity
+        image = self.bridge.imgmsg_to_cv(msg.image, "mono8")
+        self.disparityImg = image
+        self.minDisparity = msg.min_disparity
 
     def leftInfoCallback(self, msg):
+        if self.info['l']:
+            return
         self.info['l'] = msg
         rospy.Subscriber(left_camera + "/image_rect_color", Image, self.leftImageCallback, queue_size = 1)
 
     def rightInfoCallback(self, msg):
+        if self.info['r']:
+            return
         self.info['r'] = msg
         #rospy.Subscriber(right_camera + "/image_rect_color", Image, self.rightImageCallback, queue_size = 1)
 
@@ -51,34 +58,87 @@ class DisparitySegmenter():
             return
 
         self.image['l'] = self.process(msg, 'l')
-        #Util.showImage(self.image['l'], "left")
+        image = self.image['l']
+        storage = cv.CreateMemStorage(0)
+        contours = cv.FindContours(image, storage, mode=cv.CV_RETR_LIST, method=cv.CV_CHAIN_APPROX_SIMPLE)
+        if len(contours) == 0:
+            return
 
-        if not self.foundCentroidInLeft:
+        color = cv.Scalar(255)
+        holeColor = cv.Scalar(255)
+        maxLevel = 1
+        thickness = cv.CV_FILLED
+        found = False
+        while contours is not None:
+            contour = contours[:]
+            contours = contours.h_next()
+            if len(contour) < 60:
+                continue
+            found = True
+            cv.FillPoly(image, [contour], color)
+            #found, self.xClose, self.yClose, xCentroid, yCentroid = Util.find_centroid(image)
+            self.xClose, self.yClose = self.getCenterOfMass(contour)
+            break
+        Util.showImage(image, "left")
+        #cv.DrawContours(image, contours, color, holeColor, maxLevel, thickness)
+
+        if not found:
             return
 
         disparity = -1000
         for radius in range(50):
-            disparity = self.getBoxDisparity(radius)
-            if disparity > minDisparity:
+            x, y, disparity = self.getBoxDisparity(radius, image)
+            if disparity > self.minDisparity:
                 break
 
-        if disparity > minDisparity:
-            point = Util.convertStereo(self.xClose, self.yClose, disparity, self.info)
+        if disparity > self.minDisparity:
+            point = Util.convertStereo(x, y , disparity, self.info)
             self.pointpub.publish(point)
 
-    def getBoxDisparity(self, radius):
-        image = self.image['l']
+    def getCenterOfMass(self, image):
+        binaryImage = True
+        moments = cv.Moments(image, binaryImage)
+        total = float(cv.GetSpatialMoment(moments, 0, 0))
+        xavg = float(cv.GetSpatialMoment(moments, 1, 0))
+        yavg = float(cv.GetSpatialMoment(moments, 0, 1))
+        return int(xavg / total), int(yavg / total)
+
+    def getBoxDisparity(self, radius, image):
         dispImg = self.disparityImg
         
         # check left edge
         x = self.xClose - radius
-        print 'radius', radius, 'x val', image[self.xClose, self.yClose]
-
+        for y in range(self.yClose - radius, self.yClose + radius + 1):
+            d = self.getDisparity(x, y, image, dispImg)
+            if d > self.minDisparity:
+                return (x, y, d)
+                
         # check top edge
+        y = self.yClose + radius
+        for x in range(self.xClose - radius, self.xClose + radius + 1):
+            d = self.getDisparity(x, y, image, dispImg)
+            if d > self.minDisparity:
+                return (x, y, d)
 
         # check right edge
+        x = self.xClose + radius
+        for y in range(self.yClose - radius, self.yClose + radius + 1):
+            d = self.getDisparity(x, y, image, dispImg)
+            if d > self.minDisparity:
+                return (x, y, d)
+
+        return 0,0,0
 
         # check bottom edge
+        y = self.yClose - radius
+        for x in range(self.xClose - radius, self.xClose + radius + 1):
+            d = self.getDisparity(x, y, image, dispImg)
+            if d > self.minDisparity:
+                return (x, y, d)
+
+    def getDisparity(self, x, y, image, dispImg):
+        if image[y, x] > 0:
+            return cv.GetReal2D(dispImg, y, x)
 
     def rightImageCallback(self, msg):
         self.image['r'] = self.process(msg, 'r')
@@ -115,16 +175,13 @@ class DisparitySegmenter():
 
         if arm == 'l':
             threshImg = Util.threshold(image, self.hsvImg, self.threshImg, LOWERHSV, UPPERHSV)
-            self.foundCentroidInLeft, self.xClose, self.yClose, xCentroid, yCentroid = Util.find_centroid(threshImg)
+            # self.foundCentroidInLeft, self.xClose, self.yClose, xCentroid, yCentroid = Util.find_centroid(threshImg)
 
             return threshImg
 
-def test():
-    segmenter = DisparitySegmenter('left', 'right')
-    
 if __name__ == '__main__':
     rospy.init_node('disparity_segmenter')
     left_camera = 'left'
     right_camera = 'right'
-    segmenter = DisparitySegmenter(left_camera, right_camera)
+    segmenter = DisparitySegmenter(left_camera, right_camera, '/disparity', 'foam_points')
     rospy.spin()
