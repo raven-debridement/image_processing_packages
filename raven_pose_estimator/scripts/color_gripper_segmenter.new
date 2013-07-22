@@ -33,10 +33,14 @@ import code
 #             CONSTANTS                #
 ########################################
 
-TRANSLATION_R2L = (-0.05137, 0, 0.00136) 
-ROTATION_R2L = (0, -0.108380311, 0)
-#TRANSLATION_R2L = (-0.129296, 0, 0.00136124)
-#ROTATION_R2L = (0,0.104719755,0)
+#TRANSLATION_R2L = (-0.05137, 0, 0.00136) # narrow baseline
+#ROTATION_R2L = (0, -0.108380311, 0)
+#TRANSLATION_R2L = (-0.051374, 0, 0.00136) # wide baseline 1
+#TRANSLATION_R2L = (-0.0773479, 0, 0.00136) # wide baseline 2
+TRANSLATION_R2L = (-0.103322, 0, 0.00136) # wide baseline 3
+#TRANSLATION_R2L = (-0.129296, 0, 0.00136124) # wide baseline 4
+ROTATION_R2L = (0,0.104719755,0) # wide baseline rotation; same for all sets
+
 #ORANGE_LOWER = cv.Scalar( 6, 125, 130) # THESE ARE THE ORANGE VALUES
 #ORANGE_UPPER = cv.Scalar( 20, 255, 255)
 #ORANGE_LOWER = cv.Scalar(90, 150, 30) # THESE ARE THE GREEN VALUES
