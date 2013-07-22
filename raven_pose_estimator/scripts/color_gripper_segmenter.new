@@ -37,12 +37,12 @@ TRANSLATION_R2L = (-0.05137, 0, 0.00136)
 ROTATION_R2L = (0, -0.108380311, 0)
 #TRANSLATION_R2L = (-0.129296, 0, 0.00136124)
 #ROTATION_R2L = (0,0.104719755,0)
-ORANGE_LOWER = cv.Scalar( 7, 80, 50) # THESE ARE THE ORANGE VALUES
-ORANGE_UPPER = cv.Scalar( 14, 255, 255)
+ORANGE_LOWER = cv.Scalar( 6, 125, 130) # THESE ARE THE ORANGE VALUES
+ORANGE_UPPER = cv.Scalar( 20, 255, 255)
 #ORANGE_LOWER = cv.Scalar(90, 150, 30) # THESE ARE THE GREEN VALUES
 #ORANGE_UPPER = cv.Scalar(96, 255, 255)
-BLUE_LOWER = cv.Scalar(29,0, 80) # THESE ARE THE YELLOW VALUES
-BLUE_UPPER = cv.Scalar(43,255, 255)
+BLUE_LOWER = cv.Scalar(28,30, 100) # THESE ARE THE YELLOW VALUES
+BLUE_UPPER = cv.Scalar(42,255, 255)
 #BLUE_LOWER = cv.Scalar(112, 150, 50) # THESE ARE THE DARK BLUE VALUES
 #BLUE_UPPER = cv.Scalar(118, 255, 255)
 RED_LOWER = cv.Scalar(0, 100, 30)
@@ -89,21 +89,23 @@ def find_endpoints(contours):
     """ 
     Takes in a list of contours and returns the pixel coordinates of centroids of the top two contours 
     """
-    if len(contours) >=2:
-	points = []
-	for c in contours:
-	    moments = cv2.moments(c)
-	    if moments['m00']!=0:
-                cx = int(moments['m10']/moments['m00'])     
-                cy = int(moments['m01']/moments['m00'])        
-	        points.append((cx, cy))
-	try:
-	    upper_pt, lower_pt = order_points(points[0], points[1])
-	    return (lower_pt, upper_pt, True)
-	except IndexError as e:
-	    return (0,0,False)	
+    if len(contours) < 2:
+        return (0,0,False)
+    contours.sort(key=len, reverse=True)
+    points = []
+    for c in contours:
+        moments = cv2.moments(c)
+        if moments['m00']!=0:
+            cx = int(moments['m10']/moments['m00'])     
+            cy = int(moments['m01']/moments['m00'])        
+            points.append((cx, cy))
+    try:
+        upper_pt, lower_pt = order_points(points[0], points[1])
+        return (lower_pt, upper_pt, True)
+    except IndexError as e:
+        return (0,0,False)	
     else:
-	return (0,0,False)
+        return (0,0,False)
 
 
 def quat_dot_product(q1, q2):
@@ -142,9 +144,10 @@ def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
     cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
     cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
     cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
+    cv.Erode(threshImg, threshImg, None, 1)
     cv.Dilate(threshImg, threshImg, None, 1)
-    cv.Erode(threshImg, threshImg, None, 2)    
-    cv.Dilate(threshImg, threshImg, None, 1)
+    #cv.Erode(threshImg, threshImg, None, 2)    
+    #cv.Dilate(threshImg, threshImg, None, 1)
     cv.Erode(threshImg, threshImg, None, 1)
     cv.Dilate(threshImg, threshImg, None, 1)
     #cv.Erode(threshImg, threshImg, None, 1)
@@ -234,7 +237,7 @@ class ColorSegmenter():
 	    cv.ShowImage("left ROI", left_img)
 	    cv.ShowImage("left blue", left_blue)
 	    cv.ShowImage("left orange", left_orange)
-	    cv.WaitKey(3)
+        cv.WaitKey(3)
 	self.handleBoth()
 	self.left_blue_found = self.left_orange_found = False
 	
@@ -248,7 +251,7 @@ class ColorSegmenter():
 	    cv.ShowImage("right ROI", right_img)
 	    cv.ShowImage("right blue", right_blue)
 	    cv.ShowImage("right orange", right_orange)
-	    cv.WaitKey(3)
+        cv.WaitKey(3)
 	self.handleBoth()
 	self.right_blue_found = self.right_orange_found = False
 
@@ -271,7 +274,7 @@ class ColorSegmenter():
 	if SHOW_IMAGES:
 	    cv.ShowImage("threshleft", leftThresh)
 	    cv.ShowImage("threshRight", rightThresh)
-	    cv.WaitKey(3)
+        cv.WaitKey(3)
 	left_contours = find_contours(leftThresh, "left_thresh")
 	right_contours = find_contours(rightThresh, "right_thresh")
 	if len(left_contours) > 0 and len(right_contours)>0:
