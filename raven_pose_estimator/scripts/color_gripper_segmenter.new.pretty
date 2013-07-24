@@ -29,42 +29,23 @@ import code
 
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
-########################################
-#             CONSTANTS                #
-########################################
+###################################################################################################
+#                   CONSTANTS                                                                     #
+###################################################################################################
 
-#TRANSLATION_R2L = (-0.05137, 0, 0.00136) # narrow baseline
-#ROTATION_R2L = (0, -0.108380311, 0)
-#TRANSLATION_R2L = (-0.051374, 0, 0.00136) # wide baseline 1
-#TRANSLATION_R2L = (-0.0773479, 0, 0.00136) # wide baseline 2
-TRANSLATION_R2L = (-0.103322, 0, 0.00136) # wide baseline 3
-#TRANSLATION_R2L = (-0.129296, 0, 0.00136124) # wide baseline 4
-ROTATION_R2L = (0,0.104719755,0) # wide baseline rotation; same for all sets
-
-#ORANGE_LOWER = cv.Scalar( 6, 125, 130) # THESE ARE THE ORANGE VALUES
-#ORANGE_UPPER = cv.Scalar( 20, 255, 255)
+TRANSLATION_R2L = (-0.05137, 0, 0.00136) # wide baseline camera
+ROTATION_R2L = (0, -0.108380311, 0)
+#TRANSLATION_R2L = (-0.129296, 0, 0.00136124) # narrow baseline camera
+#ROTATION_R2L = (0,0.104719755,0)
+ORANGE_LOWER = cv.Scalar( 7, 80, 50) # THESE ARE THE ORANGE VALUES
+ORANGE_UPPER = cv.Scalar( 14, 255, 255)
 #ORANGE_LOWER = cv.Scalar(90, 150, 30) # THESE ARE THE GREEN VALUES
 #ORANGE_UPPER = cv.Scalar(96, 255, 255)
-#BLUE_LOWER = cv.Scalar(28,30, 100) # THESE ARE THE YELLOW VALUES
-#BLUE_UPPER = cv.Scalar(42,255, 255)
+BLUE_LOWER = cv.Scalar(30,130, 80) # THESE ARE THE YELLOW VALUES
+BLUE_UPPER = cv.Scalar(45,255, 255)
 #BLUE_LOWER = cv.Scalar(112, 150, 50) # THESE ARE THE DARK BLUE VALUES
 #BLUE_UPPER = cv.Scalar(118, 255, 255)
-#BLUE_LOWER = cv.Scalar(105, 180, 100) # THESE ARE THE MASKING TAPE BLUE VALUES pretty good
-#BLUE_UPPER = cv.Scalar(115, 255, 255)
-#BLUE_LOWER = cv.Scalar(90, 100, 100) # THESE ARE THE BLUE PAPER VALUES
-#BLUE_UPPER = cv.Scalar(108, 255, 255)
-BLUE_LOWER = cv.Scalar(80, 50, 50) #THESE ARE THE GREEN PAPER VALUES
-BLUE_UPPER = cv.Scalar(100, 255, 255)
-#ORANGE_LOWER = cv.Scalar(80, 80, 100) # THESE ARE THE MASKING TAPE GREEN VALUES ehh
-#ORANGE_UPPER = cv.Scalar(95, 150, 255) 
-#ORANGE_LOWER = cv.Scalar(113, 90, 100) # THESE ARE THE PURPLE PAPER VALUES
-#ORANGE_UPPER = cv.Scalar(120, 200, 255)
-#ORANGE_LOWER = cv.Scalar(148, 20, 100) # THESE ARE THE PINK TAPE VALUES
-#ORANGE_UPPER = cv.Scalar(170, 120, 255)
-ORANGE_LOWER = cv.Scalar(4, 50, 100) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(16, 255, 255)
-
-RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
+RED_LOWER = cv.Scalar(0, 100, 30)
 RED_UPPER = cv.Scalar(5, 255, 255)
 SHOW_IMAGES = True
 WIDTH_ROI = 250
@@ -75,9 +56,9 @@ PRINT_MESSAGES = False
 
 
 
-########################################
-#     3D GEOMETRY HELPER METHODS       #
-########################################
+###################################################################################################
+#             3D GEOMETRY HELPER METHODS                                                          #
+###################################################################################################
 
 def angleBetweenQuaternions(quat0, quat1):
     """ 
@@ -108,23 +89,21 @@ def find_endpoints(contours):
     """ 
     Takes in a list of contours and returns the pixel coordinates of centroids of the top two contours 
     """
-    if len(contours) < 2:
-        return (0,0,False)
-    contours.sort(key=len, reverse=True)
-    points = []
-    for c in contours:
-        moments = cv2.moments(c)
-        if moments['m00']!=0:
-            cx = int(moments['m10']/moments['m00'])     
-            cy = int(moments['m01']/moments['m00'])        
-            points.append((cx, cy))
-    try:
-        upper_pt, lower_pt = order_points(points[0], points[1])
-        return (lower_pt, upper_pt, True)
-    except IndexError as e:
-        return (0,0,False)	
+    if len(contours) >=2:
+	points = []
+	for c in contours:
+	    moments = cv2.moments(c)
+	    if moments['m00']!=0:
+                cx = int(moments['m10']/moments['m00'])     
+                cy = int(moments['m01']/moments['m00'])        
+	        points.append((cx, cy))
+	try:
+	    upper_pt, lower_pt = order_points(points[0], points[1])
+	    return (lower_pt, upper_pt, True)
+	except IndexError as e:
+	    return (0,0,False)	
     else:
-        return (0,0,False)
+	return (0,0,False)
 
 
 def quat_dot_product(q1, q2):
@@ -152,9 +131,9 @@ def slerp(q1, q2, t):
     return result
 
 
-########################################
-#    IMAGE-RELATED HELPER METHODS      #
-########################################
+###################################################################################################
+#              IMAGE-RELATED HELPER METHODS 							  #
+###################################################################################################
 
 def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
     """ 
@@ -163,10 +142,9 @@ def threshold(image, hsvImg, threshImg, lowerHSV, upperHSV):
     cv.Smooth(image, image, cv.CV_GAUSSIAN, 3, 0)
     cv.CvtColor(image, hsvImg, cv.CV_BGR2HSV) 
     cv.InRangeS(hsvImg, lowerHSV, upperHSV, threshImg)
-    cv.Erode(threshImg, threshImg, None, 1)
     cv.Dilate(threshImg, threshImg, None, 1)
-    #cv.Erode(threshImg, threshImg, None, 2)    
-    #cv.Dilate(threshImg, threshImg, None, 1)
+    cv.Erode(threshImg, threshImg, None, 2)    
+    cv.Dilate(threshImg, threshImg, None, 1)
     cv.Erode(threshImg, threshImg, None, 1)
     cv.Dilate(threshImg, threshImg, None, 1)
     #cv.Erode(threshImg, threshImg, None, 1)
@@ -192,9 +170,9 @@ def find_contours(im, name):
 
 
 
-##################
-#   MAIN CLASS   #
-##################
+###################################################################################################
+#            MAIN CLASS										  #
+###################################################################################################
 
 class ColorSegmenter():
     def __init__(self, left_camera, right_camera):
@@ -251,13 +229,12 @@ class ColorSegmenter():
 	""" 	
 	Takes in the image from the left camera and processes it 
 	"""
-	self.t0_left = time.clock()
 	left_img, left_blue, left_orange, left_blue_contour, left_orange_contour, self.left_blue_found, self.left_orange_found = self.process(image, "left")
 	if SHOW_IMAGES:
 	    cv.ShowImage("left ROI", left_img)
 	    cv.ShowImage("left blue", left_blue)
 	    cv.ShowImage("left orange", left_orange)
-        cv.WaitKey(3)
+	    cv.WaitKey(3)
 	self.handleBoth()
 	self.left_blue_found = self.left_orange_found = False
 	
@@ -266,43 +243,14 @@ class ColorSegmenter():
 	""" 
 	Takes in the image from the right camera and processes it 
 	"""
-	self.t0_right = time.clock()
 	right_img, right_blue, right_orange, right_blue_contour, right_orange_contour, self.right_blue_found, self.right_orange_found = self.process(image, "right")
 	if SHOW_IMAGES:
 	    cv.ShowImage("right ROI", right_img)
 	    cv.ShowImage("right blue", right_blue)
 	    cv.ShowImage("right orange", right_orange)
-        cv.WaitKey(3)
+	    cv.WaitKey(3)
 	self.handleBoth()
-	self.right_blue_found = self.right_orange_found = False
-
-
-    def threshRed(self, i):
-	#cv.ShowImage("self.leftImg", self.leftImg)
-	leftImg = cv.CloneMat(self.leftImg)
-	rightImg = cv.CloneMat(self.rightImg)
-	width = cv.GetSize(leftImg)[0]
-	height = cv.GetSize(leftImg)[1]
-	leftImg = leftImg[0:200, :]
-	rightImg = rightImg[0:200, :]
-	if SHOW_IMAGES:
-	    cv.ShowImage("smaller left", leftImg)
-	    cv.ShowImage("smaller right", rightImg)
-	leftThresh = cv.CreateImage(cv.GetSize(leftImg),8,1)
-	rightThresh = cv.CreateImage(cv.GetSize(rightImg),8,1)	
-	leftThresh = threshold(leftImg, leftImg, leftThresh, RED_LOWER, RED_UPPER)
-	rightThresh = threshold(rightImg, rightImg, rightThresh, RED_LOWER, RED_UPPER)
-	if SHOW_IMAGES:
-	    cv.ShowImage("threshleft", leftThresh)
-	    cv.ShowImage("threshRight", rightThresh)
-        cv.WaitKey(3)
-	left_contours = find_contours(leftThresh, "left_thresh")
-	right_contours = find_contours(rightThresh, "right_thresh")
-	if len(left_contours) > 0 and len(right_contours)>0:
-	    rospy.loginfo(len(left_contours))
-	    rospy.loginfo(len(right_contours))
-	    return ThreshRedResponse(1)
-	return ThreshRedResponse(0)
+	self.right_blue_found = self.right_orange_found = False    
 
 
     def process(self, image, flag):
@@ -387,7 +335,7 @@ class ColorSegmenter():
 	        polygon_points = [Point32(*x) for x in polygon_points]
 	        polygon = PolygonStamped()
 	        polygon.polygon.points = polygon_points
-	        polygon.header.frame_id = "left_BC"
+	        polygon.header.frame_id = "left_optical_frame"
 	        polygon.header.stamp = rospy.Time.now()
 	        self.polygon_pub.publish(polygon)
 	        blue_vector = []
@@ -424,22 +372,49 @@ class ColorSegmenter():
 	        pose.header.stamp = rospy.Time.now()
 	        self.quat_pub.publish(q)
 	        self.pose_pub.publish(pose)
-		t_left = time.clock() - self.t0_left
-		t_right = time.clock() - self.t0_right
-		print "RUNNING TIME FROM LEFT IMAGE: "+str(t_left)
-		print "RUNNING TIME FROM RIGHT IMAGE: "+str(t_right)
 		if PRINT_MESSAGES:		
 	             print "WORKING FINE"
 	    else:
-		#self.pose_pub.publish(self.prevQuaternion) #if the points aren't detected, continue publishing the last known location
 		if PRINT_MESSAGES:		
 		     print "POINTS NOT DETECTED"
 	except (TypeError, ValueError) as e:
 	    if PRINT_MESSAGES:
    	        print "CAUGHT ERROR"	
 	        print e
-	    #self.pose_pub.publish(self.prevQuaternion) #if some kind of error comes up, continue publishing the last known location #FIXME we may want to change this behavior
 	    pass
+
+    ##############################
+    #   THRESHOLDING SERVICE     #
+    ##############################
+
+    def threshRed(self, i):
+	"""
+	A service called after the Raven has completed a grasp; used to check if the grasp was successful or not
+	"""
+	leftImg = cv.CloneMat(self.leftImg)
+	rightImg = cv.CloneMat(self.rightImg)
+	width = cv.GetSize(leftImg)[0]
+	height = cv.GetSize(leftImg)[1]
+	leftImg = leftImg[0:200, :]
+	rightImg = rightImg[0:200, :]
+	if SHOW_IMAGES:
+	    cv.ShowImage("smaller left", leftImg)
+	    cv.ShowImage("smaller right", rightImg)
+	leftThresh = cv.CreateImage(cv.GetSize(leftImg),8,1)
+	rightThresh = cv.CreateImage(cv.GetSize(rightImg),8,1)	
+	leftThresh = threshold(leftImg, leftImg, leftThresh, RED_LOWER, RED_UPPER)
+	rightThresh = threshold(rightImg, rightImg, rightThresh, RED_LOWER, RED_UPPER)
+	if SHOW_IMAGES:
+	    cv.ShowImage("threshleft", leftThresh)
+	    cv.ShowImage("threshRight", rightThresh)
+	    cv.WaitKey(3)
+	left_contours = find_contours(leftThresh, "left_thresh")
+	right_contours = find_contours(rightThresh, "right_thresh")
+	if len(left_contours) > 0 and len(right_contours)>0:
+	    rospy.loginfo(len(left_contours))
+	    rospy.loginfo(len(right_contours))
+	    return ThreshRedResponse(1)
+	return ThreshRedResponse(0)
 
 
 
@@ -447,18 +422,13 @@ class ColorSegmenter():
     #       HELPER METHODS       #
     ############################## 
 
-    ########################################
-    #       RED THRESHOLD SERVER           #
-    ########################################
-
-
     def determineROI(self, flag):
 	"""
 	Determines the boundaries of a region of interest, based on 
 	the pixel coordinates of the gripper as given by the inverse kinematics of the robot
 	"""
 	pose = tfx.pose([0,0,0], [0,0,0,1], frame='/tool_L', stamp=rospy.Time.now())
-	tf_tool_to_cam = tfx.lookupTransform('/left_BC','/tool_L',wait=10)	
+	tf_tool_to_cam = tfx.lookupTransform('/left_optical_frame','/tool_L',wait=10)	
 	pose = tf_tool_to_cam * pose
         stereoModel = image_geometry.StereoCameraModel()
         stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
@@ -491,10 +461,6 @@ class ColorSegmenter():
 	parallel = parallel / np.linalg.norm(parallel)
 	third = np.cross(n, parallel)
 	third = third / np.linalg.norm(third)
-        #n = n / np.linalg.norm(n)
-        #v1 = np.cross(n, v0)
-        #v1 = v1 / np.linalg.norm(v1)
-	#rotMat = np.vstack((n, v1, v0)).T
 	rotMat = np.vstack((parallel, third, n)).T
 	matrix = rotMat
         tbRot = tfx.tb_angles(matrix).matrix	
@@ -528,15 +494,15 @@ class ColorSegmenter():
         return (x,y,z)
 
 
-##############################
-#      EXECUTION CODE        #
-##############################
+###################################################################################################
+#               EXECUTION CODE                                                                    #
+###################################################################################################
 
 def main():
     rospy.init_node('color_segmenter',anonymous=True)
     rospy.sleep(5)
-    left_camera = '/BC/left'
-    right_camera = '/BC/right'
+    left_camera = 'left'
+    right_camera = 'right'
     gs = ColorSegmenter(left_camera, right_camera)
     rospy.spin()
 

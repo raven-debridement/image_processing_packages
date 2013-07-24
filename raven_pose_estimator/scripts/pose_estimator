@@ -122,8 +122,17 @@ class PoseEstimator:
 					self.output.markers.append(marker)
 		elif self.marker_type == "CHESS":
 			self.output = PoseStamped()
+			stereoModel = image_geometry.StereoCameraModel()
+ 		        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+			(u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(self.left_pose.pose.position)
+			self.left_pose.pose.position.x = u_l
+			self.left_pose.pose.position.y = v_l
+			self.right_pose.pose.position.x = u_r
+			self.right_pose.pose.position.y = v_r
 			self.output.pose = self.convert_stereo(self.left_pose, self.right_pose)
 			self.output.header.stamp = rospy.Time.now()
+			rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
+			rospy.loginfo(self.output)
 		
 
 	# publishes the message with joints and poses
@@ -143,6 +152,9 @@ class PoseEstimator:
 		u = left.pose.position.x #PoseStamped.Pose.Position.x
 		v = right.pose.position.y
 		disparity = left.pose.position.x - right.pose.position.x
+		#u = left[0]
+		#v = left[1]
+		#disparity = left[0] - right[0]
 
 		stereo_model = image_geometry.StereoCameraModel()
 		stereo_model.fromCameraInfo(self.left_info, self.right_info)

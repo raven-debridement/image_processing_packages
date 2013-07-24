@@ -36,10 +36,10 @@ import code
 #ROTATION_R2L = (0, -0.108380311, 0)
 TRANSLATION_R2L = (-0.129296, 0, 0.00136124)
 ROTATION_R2L = (0,0.104719755,0)
-ORANGE_LOWER = cv.Scalar( 1, 150, 130)
-ORANGE_UPPER = cv.Scalar( 5, 255, 255)
-BLUE_LOWER = cv.Scalar(108,100, 100)
-BLUE_UPPER = cv.Scalar(120,255, 255)
+ORANGE_LOWER = cv.Scalar( 6, 100, 100)
+ORANGE_UPPER = cv.Scalar(13, 255, 255)
+BLUE_LOWER = cv.Scalar(108,100, 180)
+BLUE_UPPER = cv.Scalar(115,255, 255)
 
 
 ########################################
