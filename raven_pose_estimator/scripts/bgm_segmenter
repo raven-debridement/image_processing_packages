@@ -11,7 +11,10 @@ import cv
 from sensor_msgs.msg import Image, CameraInfo
 from stereo_msgs.msg import DisparityImage
 from geometry_msgs.msg import PointStamped
+from visualization_msgs.msg import Marker
 import cv_bridge
+
+import tfx
 
 RED_LOWER_HSV = cv.Scalar(0, 120, 50)
 RED_UPPER_HSV = cv.Scalar(8, 255, 255)
@@ -31,6 +34,7 @@ class DisparitySegmenter():
         self.threshImg = cv.CreateImage((1280, 960), 8, 1)
 
         self.pointpub = rospy.Publisher(topic, PointStamped)
+        self.markerpub = rospy.Publisher(topic+'_marker', Marker)
 
         rospy.Subscriber(left_camera + "/camera_info", CameraInfo, self.leftInfoCallback)
         rospy.Subscriber(right_camera + "/camera_info", CameraInfo, self.rightInfoCallback)
@@ -94,6 +98,9 @@ class DisparitySegmenter():
         if disparity > self.minDisparity:
             point = Util.convertStereo(x, y , disparity, self.info)
             self.pointpub.publish(point)
+
+            marker = Util.createMarker(tfx.pose(point).msg.PoseStamped(),1)
+            self.markerpub.publish(marker)
 
     def getCenterOfMass(self, image):
         binaryImage = True
@@ -183,5 +190,5 @@ if __name__ == '__main__':
     rospy.init_node('disparity_segmenter')
     left_camera = 'left'
     right_camera = 'right'
-    segmenter = DisparitySegmenter(left_camera, right_camera, '/disparity', 'foam_points')
+    segmenter = DisparitySegmenter(left_camera, right_camera, '/BC/disparity', 'foam_points')
     rospy.spin()

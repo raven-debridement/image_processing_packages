@@ -3,6 +3,7 @@ import image_geometry
 import rospy
 import cv
 from geometry_msgs.msg import PointStamped, Point
+from visualization_msgs.msg import Marker
 
 def convertStereo(u, v, disparity, info):
     """
@@ -68,3 +69,18 @@ def showImage(image, name):
     cv.NamedWindow(name, cv.CV_WINDOW_AUTOSIZE)
     cv.ShowImage(name, image)
     cv.WaitKey(50)
+
+def createMarker(pose, id_):
+    marker = Marker()
+    marker.id = id_
+    marker.header.frame_id = pose.header.frame_id
+    marker.type = marker.CUBE
+    marker.action = marker.ADD
+    marker.scale.x = 0.002
+    marker.scale.y = 0.002
+    marker.scale.z = 0.002
+    marker.color.a = 1.0
+    marker.color.r = 255
+    marker.color.g = (id_) * 127
+    marker.pose = pose.pose
+    return marker
