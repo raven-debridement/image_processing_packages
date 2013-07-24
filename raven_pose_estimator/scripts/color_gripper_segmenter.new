@@ -61,8 +61,8 @@ BLUE_UPPER = cv.Scalar(100, 255, 255)
 #ORANGE_UPPER = cv.Scalar(120, 200, 255)
 #ORANGE_LOWER = cv.Scalar(148, 20, 100) # THESE ARE THE PINK TAPE VALUES
 #ORANGE_UPPER = cv.Scalar(170, 120, 255)
-ORANGE_LOWER = cv.Scalar(4, 80, 100) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(15, 255, 255)
+ORANGE_LOWER = cv.Scalar(4, 50, 100) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_UPPER = cv.Scalar(16, 255, 255)
 
 RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
 RED_UPPER = cv.Scalar(5, 255, 255)
@@ -251,6 +251,7 @@ class ColorSegmenter():
 	""" 	
 	Takes in the image from the left camera and processes it 
 	"""
+	self.t0_left = time.clock()
 	left_img, left_blue, left_orange, left_blue_contour, left_orange_contour, self.left_blue_found, self.left_orange_found = self.process(image, "left")
 	if SHOW_IMAGES:
 	    cv.ShowImage("left ROI", left_img)
@@ -265,6 +266,7 @@ class ColorSegmenter():
 	""" 
 	Takes in the image from the right camera and processes it 
 	"""
+	self.t0_right = time.clock()
 	right_img, right_blue, right_orange, right_blue_contour, right_orange_contour, self.right_blue_found, self.right_orange_found = self.process(image, "right")
 	if SHOW_IMAGES:
 	    cv.ShowImage("right ROI", right_img)
@@ -371,7 +373,6 @@ class ColorSegmenter():
 	        print "left_blue: "+str(self.left_blue_found)
 	        print "right_blue: "+str(self.right_blue_found)
 	    if found:
-		t0 = time.clock()
 	        blue_lower_pt = self.convertStereo(self.blue_left_lower_pt[0], self.blue_left_lower_pt[1], math.fabs(self.blue_left_lower_pt[0] - self.blue_right_lower_pt[0]))
 	        blue_upper_pt = self.convertStereo(self.blue_left_upper_pt[0], self.blue_left_upper_pt[1], math.fabs(self.blue_left_upper_pt[0] - self.blue_right_upper_pt[0]))
 	        orange_lower_pt = self.convertStereo(self.orange_left_lower_pt[0], self.orange_left_lower_pt[1], math.fabs(self.orange_left_lower_pt[0] - self.orange_right_lower_pt[0]))
@@ -423,8 +424,10 @@ class ColorSegmenter():
 	        pose.header.stamp = rospy.Time.now()
 	        self.quat_pub.publish(q)
 	        self.pose_pub.publish(pose)
-		t = time.clock() - t0
-		print "RUNNING TIME: "+str(t)
+		t_left = time.clock() - self.t0_left
+		t_right = time.clock() - self.t0_right
+		print "RUNNING TIME FROM LEFT IMAGE: "+str(t_left)
+		print "RUNNING TIME FROM RIGHT IMAGE: "+str(t_right)
 		if PRINT_MESSAGES:		
 	             print "WORKING FINE"
 	    else:
