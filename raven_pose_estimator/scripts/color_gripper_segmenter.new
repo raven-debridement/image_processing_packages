@@ -53,15 +53,15 @@ ROTATION_R2L = (0,0.104719755,0) # wide baseline rotation; same for all sets
 #BLUE_UPPER = cv.Scalar(115, 255, 255)
 #BLUE_LOWER = cv.Scalar(90, 100, 100) # THESE ARE THE BLUE PAPER VALUES
 #BLUE_UPPER = cv.Scalar(108, 255, 255)
-BLUE_LOWER = cv.Scalar(60, 50, 50) #THESE ARE THE GREEN PAPER VALUES
-BLUE_UPPER = cv.Scalar(80, 255, 255)
+BLUE_LOWER = cv.Scalar(80, 50, 50) #THESE ARE THE GREEN PAPER VALUES
+BLUE_UPPER = cv.Scalar(100, 255, 255)
 #ORANGE_LOWER = cv.Scalar(80, 80, 100) # THESE ARE THE MASKING TAPE GREEN VALUES ehh
 #ORANGE_UPPER = cv.Scalar(95, 150, 255) 
 #ORANGE_LOWER = cv.Scalar(113, 90, 100) # THESE ARE THE PURPLE PAPER VALUES
 #ORANGE_UPPER = cv.Scalar(120, 200, 255)
 #ORANGE_LOWER = cv.Scalar(148, 20, 100) # THESE ARE THE PINK TAPE VALUES
 #ORANGE_UPPER = cv.Scalar(170, 120, 255)
-ORANGE_LOWER = cv.Scalar(6, 110, 100) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_LOWER = cv.Scalar(4, 80, 100) # THESE ARE THE ORANGE PAPER VALUES
 ORANGE_UPPER = cv.Scalar(15, 255, 255)
 
 RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
@@ -371,6 +371,7 @@ class ColorSegmenter():
 	        print "left_blue: "+str(self.left_blue_found)
 	        print "right_blue: "+str(self.right_blue_found)
 	    if found:
+		t0 = time.clock()
 	        blue_lower_pt = self.convertStereo(self.blue_left_lower_pt[0], self.blue_left_lower_pt[1], math.fabs(self.blue_left_lower_pt[0] - self.blue_right_lower_pt[0]))
 	        blue_upper_pt = self.convertStereo(self.blue_left_upper_pt[0], self.blue_left_upper_pt[1], math.fabs(self.blue_left_upper_pt[0] - self.blue_right_upper_pt[0]))
 	        orange_lower_pt = self.convertStereo(self.orange_left_lower_pt[0], self.orange_left_lower_pt[1], math.fabs(self.orange_left_lower_pt[0] - self.orange_right_lower_pt[0]))
@@ -385,7 +386,7 @@ class ColorSegmenter():
 	        polygon_points = [Point32(*x) for x in polygon_points]
 	        polygon = PolygonStamped()
 	        polygon.polygon.points = polygon_points
-	        polygon.header.frame_id = "left_optical_frame"
+	        polygon.header.frame_id = "left_BC"
 	        polygon.header.stamp = rospy.Time.now()
 	        self.polygon_pub.publish(polygon)
 	        blue_vector = []
@@ -422,6 +423,8 @@ class ColorSegmenter():
 	        pose.header.stamp = rospy.Time.now()
 	        self.quat_pub.publish(q)
 	        self.pose_pub.publish(pose)
+		t = time.clock() - t0
+		print "RUNNING TIME: "+str(t)
 		if PRINT_MESSAGES:		
 	             print "WORKING FINE"
 	    else:
@@ -452,7 +455,7 @@ class ColorSegmenter():
 	the pixel coordinates of the gripper as given by the inverse kinematics of the robot
 	"""
 	pose = tfx.pose([0,0,0], [0,0,0,1], frame='/tool_L', stamp=rospy.Time.now())
-	tf_tool_to_cam = tfx.lookupTransform('/left_optical_frame','/tool_L',wait=10)	
+	tf_tool_to_cam = tfx.lookupTransform('/left_BC','/tool_L',wait=10)	
 	pose = tf_tool_to_cam * pose
         stereoModel = image_geometry.StereoCameraModel()
         stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
@@ -529,8 +532,8 @@ class ColorSegmenter():
 def main():
     rospy.init_node('color_segmenter',anonymous=True)
     rospy.sleep(5)
-    left_camera = 'left'
-    right_camera = 'right'
+    left_camera = '/BC/left'
+    right_camera = '/BC/right'
     gs = ColorSegmenter(left_camera, right_camera)
     rospy.spin()
 
