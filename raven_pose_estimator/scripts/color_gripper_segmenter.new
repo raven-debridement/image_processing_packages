@@ -61,17 +61,18 @@ BLUE_UPPER = cv.Scalar(100, 255, 255)
 #ORANGE_UPPER = cv.Scalar(120, 200, 255)
 #ORANGE_LOWER = cv.Scalar(148, 20, 100) # THESE ARE THE PINK TAPE VALUES
 #ORANGE_UPPER = cv.Scalar(170, 120, 255)
-ORANGE_LOWER = cv.Scalar(4, 50, 100) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(16, 255, 255)
+ORANGE_LOWER = cv.Scalar(4, 40, 100) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_UPPER = cv.Scalar(30, 255, 255)
 
 RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
-RED_UPPER = cv.Scalar(5, 255, 255)
-SHOW_IMAGES = True
+RED_UPPER = cv.Scalar(3, 255, 255)
+SHOW_IMAGES = False
 WIDTH_ROI = 250
 HEIGHT_ROI = 250
 SLERP = True
 SLERP_CONSTANT = 0.2
 PRINT_MESSAGES = False
+SHOW_TIME = True
 
 
 
@@ -139,6 +140,9 @@ def slerp(q1, q2, t):
     finds the SLERP interpolation between two quaternions
     """
     dot_product = quat_dot_product(q1,q2)
+    if dot_product < 0:
+	q1.w = -q1.w
+	dot_product = quat_dot_product(q1, q2)
     theta = math.acos(dot_product)
     x = (math.sin((1-t)*theta)/math.sin(theta))*q1.x + (math.sin(t*theta)/math.sin(theta))*q2.x
     y = (math.sin((1-t)*theta)/math.sin(theta))*q1.y + (math.sin(t*theta)/math.sin(theta))*q2.y
@@ -426,10 +430,11 @@ class ColorSegmenter():
 	        self.pose_pub.publish(pose)
 		t_left = time.clock() - self.t0_left
 		t_right = time.clock() - self.t0_right
-		print "RUNNING TIME FROM LEFT IMAGE: "+str(t_left)
-		print "RUNNING TIME FROM RIGHT IMAGE: "+str(t_right)
+		if SHOW_TIME:
+		    print "RUNNING TIME FROM LEFT IMAGE: "+str(t_left)
+		    print "RUNNING TIME FROM RIGHT IMAGE: "+str(t_right)
 		if PRINT_MESSAGES:		
-	             print "WORKING FINE"
+	            print "WORKING FINE"
 	    else:
 		#self.pose_pub.publish(self.prevQuaternion) #if the points aren't detected, continue publishing the last known location
 		if PRINT_MESSAGES:		
