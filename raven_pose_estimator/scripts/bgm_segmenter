@@ -17,7 +17,7 @@ import cv_bridge
 import tfx
 
 RED_LOWER_HSV = cv.Scalar(0, 120, 50)
-RED_UPPER_HSV = cv.Scalar(8, 255, 255)
+RED_UPPER_HSV = cv.Scalar(6, 255, 255)
 LOWERHSV = RED_LOWER_HSV
 UPPERHSV = RED_UPPER_HSV
 LOWERHSV2 = cv.Scalar(170, 120, 50)

@@ -38,9 +38,9 @@ def slerp(q1, q2, t):
     return result
 
 class PoseEstimator:
-	def __init__(self, left_camera, right_camera, left_poses, right_poses, marker_type):
+	def __init__(self, left_camera, right_camera, left_poses, right_poses, marker_type, output, frame):
 		self.marker_type = marker_type
-		rospy.loginfo(marker_type)
+		#rospy.loginfo(marker_type)
 		if self.marker_type=="AR":
 			msg_type = ARMarkers
 			self.output = ARMarkers()
@@ -54,11 +54,13 @@ class PoseEstimator:
 		self.left_point_subscriber = rospy.Subscriber(left_poses, msg_type, self.left_handle_markers)
 		self.right_point_subscriber = rospy.Subscriber(right_poses, msg_type, self.right_handle_markers)
 		self.output_publisher = rospy.Publisher("poses", msg_type)
-		self.left_info_sub = rospy.Subscriber("/%s/camera_info"%left_camera, CameraInfo, self.update_left_info)
-		self.right_info_sub = rospy.Subscriber("/%s/camera_info"%right_camera, CameraInfo, self.update_right_info)
+		self.left_info_sub = rospy.Subscriber("%s/camera_info"%left_camera, CameraInfo, self.update_left_info)
+		self.right_info_sub = rospy.Subscriber("%s/camera_info"%right_camera, CameraInfo, self.update_right_info)
 		self.transform_listener = tf.TransformListener()
-		self.left_frame = "left_camera"
-		self.right_frame = "right_camera"
+		self.left_frame = "left_"+frame
+		self.right_frame = "right_"+frame
+		self.output = output
+		self.frame = frame
 
 	def update_left_info(self, cam_info):
 		self.left_info = cam_info
@@ -123,16 +125,16 @@ class PoseEstimator:
 		elif self.marker_type == "CHESS":
 			self.output = PoseStamped()
 			stereoModel = image_geometry.StereoCameraModel()
- 		        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
-			(u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(self.left_pose.pose.position)
+ 		        stereoModel.fromCameraInfo(self.left_info, self.right_info)
+			(u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel((self.left_pose.pose.position.x,self.left_pose.pose.position.y,self.left_pose.pose.position.z) )
 			self.left_pose.pose.position.x = u_l
 			self.left_pose.pose.position.y = v_l
 			self.right_pose.pose.position.x = u_r
 			self.right_pose.pose.position.y = v_r
 			self.output.pose = self.convert_stereo(self.left_pose, self.right_pose)
 			self.output.header.stamp = rospy.Time.now()
-			rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
-			rospy.loginfo(self.output)
+			#rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
+			#rospy.loginfo(self.output)
 		
 
 	# publishes the message with joints and poses
@@ -167,19 +169,22 @@ class PoseEstimator:
 
 		right_quat_stamped = QuaternionStamped()
 		right_quat_stamped.quaternion = right.pose.orientation
-		right_quat_stamped.header.frame_id = "right_camera"
+		right_quat_stamped.header.frame_id = self.right_frame
 		transformed_orientation = self.transform_listener.transformQuaternion(self.left_frame, right_quat_stamped) 
 		accurate_pose.pose.orientation = slerp(transformed_orientation.quaternion, left.pose.orientation, 0.5) 
 		return accurate_pose.pose
 
 def main():
-	left_camera = '/stereo/left'
-	right_camera = '/stereo/right'
-	left_poses = 'left_poses'
-	right_poses = 'right_poses'
-	marker_type = 'CHESS'
+	left_camera = rospy.get_param("~left", "/AD/left")
+	right_camera = rospy.get_param("~right", "/AD/right")
+	left_poses = rospy.get_param("~left_poses", "base_cb_left")
+	right_poses = rospy.get_param("~right_poses", "base_cb_right")
+	marker_type = rospy.get_param("~marker", "CHESS")
+	output = rospy.get_param("~output", "base_cb")
+	frame = rospy.get_param("~frame", "AD")
+
 	rospy.init_node("pose_estimator")
-	p = PoseEstimator(left_camera, right_camera, left_poses, right_poses, marker_type)
+	p = PoseEstimator(left_camera, right_camera, left_poses, right_poses, marker_type, output, frame)
 	rospy.spin()
 
 
