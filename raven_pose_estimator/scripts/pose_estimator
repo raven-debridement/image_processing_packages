@@ -53,13 +53,13 @@ class PoseEstimator:
 			self.right_pose = None
 		self.left_point_subscriber = rospy.Subscriber(left_poses, msg_type, self.left_handle_markers)
 		self.right_point_subscriber = rospy.Subscriber(right_poses, msg_type, self.right_handle_markers)
-		self.output_publisher = rospy.Publisher("poses", msg_type)
+		self.output_topic = output
+		self.output_publisher = rospy.Publisher(self.output_topic, msg_type)
 		self.left_info_sub = rospy.Subscriber("%s/camera_info"%left_camera, CameraInfo, self.update_left_info)
 		self.right_info_sub = rospy.Subscriber("%s/camera_info"%right_camera, CameraInfo, self.update_right_info)
 		self.transform_listener = tf.TransformListener()
 		self.left_frame = "left_"+frame
 		self.right_frame = "right_"+frame
-		self.output = output
 		self.frame = frame
 
 	def update_left_info(self, cam_info):
@@ -133,8 +133,9 @@ class PoseEstimator:
 			self.right_pose.pose.position.y = v_r
 			self.output.pose = self.convert_stereo(self.left_pose, self.right_pose)
 			self.output.header.stamp = rospy.Time.now()
-			#rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
-			#rospy.loginfo(self.output)
+			self.output.header.frame_id = self.left_frame
+			rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
+			rospy.loginfo(self.output_topic)
 		
 
 	# publishes the message with joints and poses
@@ -142,7 +143,7 @@ class PoseEstimator:
 		#print "data"
 		#print "[%d, %d, %d, %d]"%self.output.pose.pose.orientation.x, self.output.pose.pose.orientation.y, self.output.pose.pose.orientation.z, self.output.pose.pose.orientation.w
 		#print tfx.pose(self.output.pose.pose)
-		self.output_publisher.publish(self.output)
+		self.output_publisher.publish(self.output)	
 		if self.marker_type == "AR":
 			self.output = ARMarkers()
 		elif self.marker_type == "CHESS":
@@ -175,6 +176,7 @@ class PoseEstimator:
 		return accurate_pose.pose
 
 def main():
+	rospy.init_node("pose_estimator")
 	left_camera = rospy.get_param("~left", "/AD/left")
 	right_camera = rospy.get_param("~right", "/AD/right")
 	left_poses = rospy.get_param("~left_poses", "base_cb_left")
@@ -182,8 +184,6 @@ def main():
 	marker_type = rospy.get_param("~marker", "CHESS")
 	output = rospy.get_param("~output", "base_cb")
 	frame = rospy.get_param("~frame", "AD")
-
-	rospy.init_node("pose_estimator")
 	p = PoseEstimator(left_camera, right_camera, left_poses, right_poses, marker_type, output, frame)
 	rospy.spin()
 
