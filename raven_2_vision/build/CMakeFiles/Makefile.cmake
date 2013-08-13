@@ -7,6 +7,7 @@ SET(CMAKE_DEPENDS_GENERATOR "Unix Makefiles")
 # The top level Makefile was generated from the following files:
 SET(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
+  "/home/annal/src/openrave/roseus/cmake/roseus.cmake"
   "../CMakeLists.txt"
   "CMakeFiles/CMakeCCompiler.cmake"
   "CMakeFiles/CMakeCXXCompiler.cmake"

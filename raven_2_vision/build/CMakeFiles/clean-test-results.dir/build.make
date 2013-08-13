@@ -35,10 +35,10 @@ RM = /usr/bin/cmake -E remove -f
 CMAKE_EDIT_COMMAND = /usr/bin/ccmake
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision
+CMAKE_SOURCE_DIR = /home/annal/src/raven_2/raven_2_vision
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/build
+CMAKE_BINARY_DIR = /home/annal/src/raven_2/raven_2_vision/build
 
 # Utility rule file for clean-test-results.
 
@@ -46,7 +46,7 @@ CMAKE_BINARY_DIR = /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vi
 include CMakeFiles/clean-test-results.dir/progress.make
 
 CMakeFiles/clean-test-results:
-	if ! rm -rf /home/jonathankim/.ros/test_results/raven_2_vision; then echo WARNING:\ failed\ to\ remove\ test-results\ directory ; fi
+	if ! rm -rf /home/annal/.ros/test_results/raven_2_vision; then echo WARNING:\ failed\ to\ remove\ test-results\ directory ; fi
 
 clean-test-results: CMakeFiles/clean-test-results
 clean-test-results: CMakeFiles/clean-test-results.dir/build.make
@@ -61,6 +61,6 @@ CMakeFiles/clean-test-results.dir/clean:
 .PHONY : CMakeFiles/clean-test-results.dir/clean
 
 CMakeFiles/clean-test-results.dir/depend:
-	cd /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/build /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/build /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/build/CMakeFiles/clean-test-results.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/annal/src/raven_2/raven_2_vision/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/annal/src/raven_2/raven_2_vision /home/annal/src/raven_2/raven_2_vision /home/annal/src/raven_2/raven_2_vision/build /home/annal/src/raven_2/raven_2_vision/build /home/annal/src/raven_2/raven_2_vision/build/CMakeFiles/clean-test-results.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/clean-test-results.dir/depend
 

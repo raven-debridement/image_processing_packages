@@ -3,8 +3,8 @@
 
 CMakeFiles/chessboard_tracker.dir/src/chessboard_tracker_node.o
  ../include/raven_2_vision/raven_vision.h
- /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/chessboard_tracker_node.cpp
- /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/config.h
+ /home/annal/src/raven_2/raven_2_vision/src/chessboard_tracker_node.cpp
+ /home/annal/src/raven_2/raven_2_vision/src/config.h
  /opt/ros/fuerte/include/XmlRpcDecl.h
  /opt/ros/fuerte/include/XmlRpcValue.h
  /opt/ros/fuerte/include/geometry_msgs/Point.h

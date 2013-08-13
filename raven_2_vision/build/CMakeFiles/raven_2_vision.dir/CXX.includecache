@@ -14,25 +14,9 @@ geometry_msgs/PoseStamped.h
 vector
 -
 
-/home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/config.cpp
-config.h
-/home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/config.h
-boost/foreach.hpp
--
-
-/home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/config.h
-vector
--
-string
--
-iostream
--
-boost/program_options.hpp
--
-
-/home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/raven_vision.cpp
+/home/annal/src/raven_2/raven_2_vision/src/raven_vision.cpp
 raven_2_vision/raven_vision.h
-/home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/raven_2_vision/raven_vision.h
+/home/annal/src/raven_2/raven_2_vision/src/raven_2_vision/raven_vision.h
 opencv2/core/core.hpp
 -
 opencv2/imgproc/imgproc.hpp

@@ -3,8 +3,8 @@
 
 CMakeFiles/extrinsic_calibration.dir/src/extrinsic_calibration.o
  ../include/raven_2_vision/raven_vision.h
- /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/config.h
- /home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/extrinsic_calibration.cpp
+ /home/annal/src/raven_2/raven_2_vision/src/config.h
+ /home/annal/src/raven_2/raven_2_vision/src/extrinsic_calibration.cpp
  /opt/ros/fuerte/include/geometry_msgs/Point.h
  /opt/ros/fuerte/include/geometry_msgs/Pose.h
  /opt/ros/fuerte/include/geometry_msgs/PoseStamped.h

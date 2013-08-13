@@ -14,7 +14,7 @@ geometry_msgs/PoseStamped.h
 vector
 -
 
-/home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/test_capture.cpp
+/home/annal/src/raven_2/raven_2_vision/src/test_capture.cpp
 opencv2/core/core.hpp
 -
 opencv2/imgproc/imgproc.hpp
@@ -32,7 +32,7 @@ LinearMath/btTransform.h
 ros/ros.h
 -
 raven_2_vision/raven_vision.h
-/home/jonathankim/fuerte_workspace/sandbox/raven_2/raven_2_vision/src/raven_2_vision/raven_vision.h
+/home/annal/src/raven_2/raven_2_vision/src/raven_2_vision/raven_vision.h
 
 /opt/ros/fuerte/include/XmlRpcDecl.h
 ros/macros.h
