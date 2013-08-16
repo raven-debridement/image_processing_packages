@@ -33,40 +33,29 @@ import code
 #             CONSTANTS                #
 ########################################
 
-#TRANSLATION_R2L = (-0.05137, 0, 0.00136) # narrow baseline
-#ROTATION_R2L = (0, -0.108380311, 0)
-#TRANSLATION_R2L = (-0.051374, 0, 0.00136) # wide baseline 1
-#TRANSLATION_R2L = (-0.0773479, 0, 0.00136) # wide baseline 2
-TRANSLATION_R2L = (-0.103322, 0, 0.00136) # wide baseline 3
-#TRANSLATION_R2L = (-0.129296, 0, 0.00136124) # wide baseline 4
-ROTATION_R2L = (0,0.104719755,0) # wide baseline rotation; same for all sets
-
-#ORANGE_LOWER = cv.Scalar( 6, 125, 130) # THESE ARE THE ORANGE VALUES
-#ORANGE_UPPER = cv.Scalar( 20, 255, 255)
-#ORANGE_LOWER = cv.Scalar(90, 150, 30) # THESE ARE THE GREEN VALUES
-#ORANGE_UPPER = cv.Scalar(96, 255, 255)
-#BLUE_LOWER = cv.Scalar(28,30, 100) # THESE ARE THE YELLOW VALUES
-#BLUE_UPPER = cv.Scalar(42,255, 255)
-#BLUE_LOWER = cv.Scalar(112, 150, 50) # THESE ARE THE DARK BLUE VALUES
-#BLUE_UPPER = cv.Scalar(118, 255, 255)
-#BLUE_LOWER = cv.Scalar(105, 180, 100) # THESE ARE THE MASKING TAPE BLUE VALUES pretty good
-#BLUE_UPPER = cv.Scalar(115, 255, 255)
-#BLUE_LOWER = cv.Scalar(90, 100, 100) # THESE ARE THE BLUE PAPER VALUES
-#BLUE_UPPER = cv.Scalar(108, 255, 255)
-BLUE_LOWER = cv.Scalar(38, 50, 50) #THESE ARE THE GREEN PAPER VALUES
-BLUE_UPPER = cv.Scalar(60, 255, 255)
-#ORANGE_LOWER = cv.Scalar(80, 80, 100) # THESE ARE THE MASKING TAPE GREEN VALUES ehh
-#ORANGE_UPPER = cv.Scalar(95, 150, 255) 
-#ORANGE_LOWER = cv.Scalar(113, 90, 100) # THESE ARE THE PURPLE PAPER VALUES
-#ORANGE_UPPER = cv.Scalar(120, 200, 255)
-#ORANGE_LOWER = cv.Scalar(148, 20, 100) # THESE ARE THE PINK TAPE VALUES
-#ORANGE_UPPER = cv.Scalar(170, 120, 255)
-ORANGE_LOWER = cv.Scalar(8, 75, 240) # THESE ARE THE ORANGE PAPER VALUES
+# right gripper
+GREEN_LOWER = cv.Scalar(38, 50, 50) #THESE ARE THE GREEN PAPER VALUES
+GREEN_UPPER = cv.Scalar(88, 255, 255)
+ORANGE_LOWER = cv.Scalar(5, 50, 180) # THESE ARE THE ORANGE PAPER VALUES
 ORANGE_UPPER = cv.Scalar(35, 255, 255)
+
+# left gripper
+PURPLE_LOWER = cv.Scalar(120, 60, 100)
+PURPLE_UPPER = cv.Scalar(170, 255, 255)
+BLUE_LOWER = cv.Scalar(90, 100, 100)
+BLUE_UPPER = cv.Scalar(120, 255, 255)
+
+# TEMP: since only for one gripper at a time
+#GREEN_LOWER = PURPLE_LOWER
+#GREEN_UPPER = PURPLE_UPPER
+#ORANGE_LOWER = BLUE_LOWER
+#ORANGE_UPPER = BLUE_UPPER
+
+TOOL_FRAME = 'tool_R'
 
 RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
 RED_UPPER = cv.Scalar(3, 255, 255)
-SHOW_IMAGES = False
+SHOW_IMAGES = True
 WIDTH_ROI = 400
 HEIGHT_ROI = 400
 SLERP = True
@@ -74,7 +63,7 @@ DYNAMIC_SLERP = False
 SLERP_CONSTANT = 0.1
 PRINT_MESSAGES = False
 SHOW_TIME = False
-TOOL_FRAME = 'tool_L'
+
 
 
 
@@ -225,14 +214,14 @@ class ColorSegmenter():
         self.red_service = rospy.Service('thresh_red', ThreshRed, self.threshRed)
 
         self.left_orange_found = False
-        self.left_blue_found = False
+        self.left_green_found = False
         self.right_orange_found = False
-        self.right_blue_found = False
+        self.right_green_found = False
 
-        self.blue_left_lower_pt = None
-        self.blue_left_upper_pt = None
-        self.blue_right_lower_pt = None
-        self.blue_right_upper_pt = None
+        self.green_left_lower_pt = None
+        self.green_left_upper_pt = None
+        self.green_right_lower_pt = None
+        self.green_right_upper_pt = None
         self.orange_left_lower_pt = None
         self.orange_left_upper_pt = None
         self.orange_right_lower_pt = None
@@ -262,14 +251,14 @@ class ColorSegmenter():
         Takes in the image from the left camera and processes it 
         """
         self.t0_left = time.clock()
-        left_img, left_blue, left_orange, left_blue_contour, left_orange_contour, self.left_blue_found, self.left_orange_found = self.process(image, "left")
+        left_img, left_green, left_orange, left_green_contour, left_orange_contour, self.left_green_found, self.left_orange_found = self.process(image, "left")
         if SHOW_IMAGES:
             cv.ShowImage("left ROI", left_img)
-            cv.ShowImage("left blue", left_blue)
+            cv.ShowImage("left green", left_green)
             cv.ShowImage("left orange", left_orange)
         cv.WaitKey(3)
         self.handleBoth()
-        self.left_blue_found = self.left_orange_found = False
+        self.left_green_found = self.left_orange_found = False
         
 
     def rightImageCallback(self, image):
@@ -277,14 +266,14 @@ class ColorSegmenter():
         Takes in the image from the right camera and processes it 
         """
         self.t0_right = time.clock()
-        right_img, right_blue, right_orange, right_blue_contour, right_orange_contour, self.right_blue_found, self.right_orange_found = self.process(image, "right")
+        right_img, right_green, right_orange, right_green_contour, right_orange_contour, self.right_green_found, self.right_orange_found = self.process(image, "right")
         if SHOW_IMAGES:
             cv.ShowImage("right ROI", right_img)
-            cv.ShowImage("right blue", right_blue)
+            cv.ShowImage("right green", right_green)
             cv.ShowImage("right orange", right_orange)
         cv.WaitKey(3)
         self.handleBoth()
-        self.right_blue_found = self.right_orange_found = False
+        self.right_green_found = self.right_orange_found = False
 
 
     def threshRed(self, i):
@@ -342,31 +331,31 @@ class ColorSegmenter():
         hsvImg = cv.CreateImage(cv.GetSize(cv_image),8,3)
         orangeThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
         orangeThreshImg = threshold(cv_image, hsvImg, orangeThreshImg, ORANGE_LOWER, ORANGE_UPPER)
-        blueThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
-        blueThreshImg = threshold(cv_image, hsvImg, blueThreshImg, BLUE_LOWER, BLUE_UPPER)
-        blueContourImg = cv.CloneImage(blueThreshImg)
+        greenThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
+        greenThreshImg = threshold(cv_image, hsvImg, greenThreshImg, GREEN_LOWER, GREEN_UPPER)
+        greenContourImg = cv.CloneImage(greenThreshImg)
         orangeContourImg = cv.CloneImage(orangeThreshImg)
-        blue_contours = find_contours(blueContourImg, "blue") #FIXME remove later
+        green_contours = find_contours(greenContourImg, "green") #FIXME remove later
         orange_contours = find_contours(orangeContourImg, "orange") #FIXME remove later
         if flag=="left":
-            self.blue_left_lower_pt, self.blue_left_upper_pt, left_blue_found = find_endpoints(blue_contours)
+            self.green_left_lower_pt, self.green_left_upper_pt, left_green_found = find_endpoints(green_contours)
             self.orange_left_lower_pt, self.orange_left_upper_pt, left_orange_found = find_endpoints(orange_contours)
-            self.blue_left_lower_pt = self.addOffset(self.blue_left_lower_pt, widthOffset, heightOffset)
-            self.blue_left_upper_pt = self.addOffset(self.blue_left_upper_pt, widthOffset, heightOffset)
+            self.green_left_lower_pt = self.addOffset(self.green_left_lower_pt, widthOffset, heightOffset)
+            self.green_left_upper_pt = self.addOffset(self.green_left_upper_pt, widthOffset, heightOffset)
             self.orange_left_lower_pt = self.addOffset(self.orange_left_lower_pt, widthOffset, heightOffset)
             self.orange_left_upper_pt = self.addOffset(self.orange_left_upper_pt, widthOffset, heightOffset)
-            blue_found = left_blue_found
+            green_found = left_green_found
             orange_found = left_orange_found
         elif flag=="right":
-            self.blue_right_lower_pt, self.blue_right_upper_pt, right_blue_found = find_endpoints(blue_contours)
+            self.green_right_lower_pt, self.green_right_upper_pt, right_green_found = find_endpoints(green_contours)
             self.orange_right_lower_pt, self.orange_right_upper_pt, right_orange_found = find_endpoints(orange_contours)
-            self.blue_right_lower_pt = self.addOffset(self.blue_right_lower_pt, widthOffset, heightOffset)
-            self.blue_right_upper_pt = self.addOffset(self.blue_right_upper_pt, widthOffset, heightOffset)
+            self.green_right_lower_pt = self.addOffset(self.green_right_lower_pt, widthOffset, heightOffset)
+            self.green_right_upper_pt = self.addOffset(self.green_right_upper_pt, widthOffset, heightOffset)
             self.orange_right_lower_pt = self.addOffset(self.orange_right_lower_pt, widthOffset, heightOffset)
             self.orange_right_upper_pt = self.addOffset(self.orange_right_upper_pt, widthOffset, heightOffset)
-            blue_found = right_blue_found
+            green_found = right_green_found
             orange_found = right_orange_found
-        return cv_image, blueThreshImg, orangeThreshImg, blueContourImg, orangeContourImg, blue_found, orange_found
+        return cv_image, greenThreshImg, orangeThreshImg, greenContourImg, orangeContourImg, green_found, orange_found
 
 
     def handleBoth(self):
@@ -375,37 +364,37 @@ class ColorSegmenter():
         orientation and position of the gripper 
         """
         try:
-            found = self.left_orange_found and self.left_blue_found and self.right_orange_found and self.right_blue_found
+            found = self.left_orange_found and self.left_green_found and self.right_orange_found and self.right_green_found
             if PRINT_MESSAGES:
                 print "found"
                 print "left_orange: "+str(self.left_orange_found)
                 print "right_orange: "+str(self.right_orange_found)
-                print "left_blue: "+str(self.left_blue_found)
-                print "right_blue: "+str(self.right_blue_found)
+                print "left_green: "+str(self.left_green_found)
+                print "right_green: "+str(self.right_green_found)
             if found:
-                blue_lower_pt = self.convertStereo(self.blue_left_lower_pt[0], self.blue_left_lower_pt[1], math.fabs(self.blue_left_lower_pt[0] - self.blue_right_lower_pt[0]))
-                blue_upper_pt = self.convertStereo(self.blue_left_upper_pt[0], self.blue_left_upper_pt[1], math.fabs(self.blue_left_upper_pt[0] - self.blue_right_upper_pt[0]))
+                green_lower_pt = self.convertStereo(self.green_left_lower_pt[0], self.green_left_lower_pt[1], math.fabs(self.green_left_lower_pt[0] - self.green_right_lower_pt[0]))
+                green_upper_pt = self.convertStereo(self.green_left_upper_pt[0], self.green_left_upper_pt[1], math.fabs(self.green_left_upper_pt[0] - self.green_right_upper_pt[0]))
                 orange_lower_pt = self.convertStereo(self.orange_left_lower_pt[0], self.orange_left_lower_pt[1], math.fabs(self.orange_left_lower_pt[0] - self.orange_right_lower_pt[0]))
                 orange_upper_pt = self.convertStereo(self.orange_left_upper_pt[0], self.orange_left_upper_pt[1], math.fabs(self.orange_left_upper_pt[0] - self.orange_right_upper_pt[0]))
                 p = Point()
-                position = ((blue_lower_pt[0]+blue_upper_pt[0]+orange_lower_pt[0]+orange_upper_pt[0])/4, (blue_lower_pt[1]+blue_upper_pt[1]+orange_lower_pt[1]+orange_upper_pt[1])/4, (blue_lower_pt[2]+blue_upper_pt[2]+orange_lower_pt[2]+orange_upper_pt[2])/4)
+                position = ((green_lower_pt[0]+green_upper_pt[0]+orange_lower_pt[0]+orange_upper_pt[0])/4, (green_lower_pt[1]+green_upper_pt[1]+orange_lower_pt[1]+orange_upper_pt[1])/4, (green_lower_pt[2]+green_upper_pt[2]+orange_lower_pt[2]+orange_upper_pt[2])/4)
                 p.x = position[0]
                 p.y = position[1]
                 p.z = position[2]
 
-                polygon_points = [blue_lower_pt, blue_upper_pt, orange_upper_pt, orange_lower_pt]
+                polygon_points = [green_lower_pt, green_upper_pt, orange_upper_pt, orange_lower_pt]
                 polygon_points = [Point32(*x) for x in polygon_points]
                 polygon = PolygonStamped()
                 polygon.polygon.points = polygon_points
                 polygon.header.frame_id = "left_BC"
                 polygon.header.stamp = rospy.Time.now()
                 self.polygon_pub.publish(polygon)
-                blue_vector = []
+                green_vector = []
                 orange_vector = []
                 for i in range(0, 3):
-                    blue_vector.append(blue_upper_pt[i] - blue_lower_pt[i])
+                    green_vector.append(green_upper_pt[i] - green_lower_pt[i])
                     orange_vector.append(orange_upper_pt[i] - orange_lower_pt[i])
-                quat = self.get_orientation_from_lines(blue_vector, orange_vector)
+                quat = self.get_orientation_from_lines(green_vector, orange_vector)
                 tb = tfx.tb_angles(quat)
                 q = Quaternion()
                 q.x = quat[0]
