@@ -1,2 +1,0 @@
-- setup-file:
-    local-name: /home/meg/catkin_ws/src/image_processing_packages/camera_umd/jpeg_streamer/build/devel/setup.sh
