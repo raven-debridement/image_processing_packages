@@ -11,6 +11,7 @@ SET(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/CMakeCCompiler.cmake"
   "CMakeFiles/CMakeCXXCompiler.cmake"
   "CMakeFiles/CMakeSystem.cmake"
+  "/home/annal/src/openrave/roseus/cmake/roseus.cmake"
   "/opt/ros/fuerte/share/ros/core/rosbuild/ProcessorCount.cmake"
   "/opt/ros/fuerte/share/ros/core/rosbuild/private.cmake"
   "/opt/ros/fuerte/share/ros/core/rosbuild/public.cmake"

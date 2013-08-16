@@ -51,8 +51,6 @@ class PoseEstimator:
 			self.output = PoseStamped()
 			self.left_pose = None
 			self.right_pose = None
-			#self.left_unrect_pose_publisher = rospy.Publisher(self.output_topic+"_left_unrect", PoseStamped)
-			#self.right_unrect_pose_publisher = rospy.Publisher(self.output_topic+"_right_unrect", PoseStamped)
 		self.left_point_subscriber = rospy.Subscriber(left_poses, msg_type, self.left_handle_markers)
 		self.right_point_subscriber = rospy.Subscriber(right_poses, msg_type, self.right_handle_markers)
 		self.output_topic = output
@@ -136,8 +134,8 @@ class PoseEstimator:
 			self.output.pose = self.convert_stereo(self.left_pose, self.right_pose)
 			self.output.header.stamp = rospy.Time.now()
 			self.output.header.frame_id = self.left_frame
-			#rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
-			#rospy.loginfo(self.output_topic)
+			rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
+			rospy.loginfo(self.output_topic)
 		
 
 	# publishes the message with joints and poses

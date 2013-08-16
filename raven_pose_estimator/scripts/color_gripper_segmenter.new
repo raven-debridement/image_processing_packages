@@ -53,27 +53,28 @@ ROTATION_R2L = (0,0.104719755,0) # wide baseline rotation; same for all sets
 #BLUE_UPPER = cv.Scalar(115, 255, 255)
 #BLUE_LOWER = cv.Scalar(90, 100, 100) # THESE ARE THE BLUE PAPER VALUES
 #BLUE_UPPER = cv.Scalar(108, 255, 255)
-BLUE_LOWER = cv.Scalar(35, 50, 50) #THESE ARE THE GREEN PAPER VALUES
-BLUE_UPPER = cv.Scalar(50, 255, 255)
+BLUE_LOWER = cv.Scalar(38, 50, 50) #THESE ARE THE GREEN PAPER VALUES
+BLUE_UPPER = cv.Scalar(60, 255, 255)
 #ORANGE_LOWER = cv.Scalar(80, 80, 100) # THESE ARE THE MASKING TAPE GREEN VALUES ehh
 #ORANGE_UPPER = cv.Scalar(95, 150, 255) 
 #ORANGE_LOWER = cv.Scalar(113, 90, 100) # THESE ARE THE PURPLE PAPER VALUES
 #ORANGE_UPPER = cv.Scalar(120, 200, 255)
 #ORANGE_LOWER = cv.Scalar(148, 20, 100) # THESE ARE THE PINK TAPE VALUES
 #ORANGE_UPPER = cv.Scalar(170, 120, 255)
-ORANGE_LOWER = cv.Scalar(7, 160, 180) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(30, 255, 255)
+ORANGE_LOWER = cv.Scalar(8, 75, 240) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_UPPER = cv.Scalar(35, 255, 255)
 
 RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
 RED_UPPER = cv.Scalar(3, 255, 255)
-SHOW_IMAGES = True
-WIDTH_ROI = 600#250
-HEIGHT_ROI = 450#250
+SHOW_IMAGES = False
+WIDTH_ROI = 400
+HEIGHT_ROI = 400
 SLERP = True
 DYNAMIC_SLERP = False
 SLERP_CONSTANT = 0.1
 PRINT_MESSAGES = False
 SHOW_TIME = False
+TOOL_FRAME = 'tool_L'
 
 
 
@@ -474,8 +475,8 @@ class ColorSegmenter():
 	Determines the boundaries of a region of interest, based on 
 	the pixel coordinates of the gripper as given by the inverse kinematics of the robot
 	"""
-	pose = tfx.pose([0,0,0], [0,0,0,1], frame='/tool_L', stamp=rospy.Time.now())
-	tf_tool_to_cam = tfx.lookupTransform('/left_BC','/tool_L',wait=10)	
+	pose = tfx.pose([0,0,0], [0,0,0,1], frame=TOOL_FRAME, stamp=rospy.Time.now())
+	tf_tool_to_cam = tfx.lookupTransform('/left_BC',TOOL_FRAME,wait=10)	
 	pose = tf_tool_to_cam * pose
         stereoModel = image_geometry.StereoCameraModel()
         stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)

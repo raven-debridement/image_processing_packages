@@ -15,6 +15,7 @@
   <depend package="ar_pose"/>
   <depend package="image_geometry"/>
   <depend package="raven_2_vision" />
+  <depend package="marker_detect"/>
 
 </package>
 
