@@ -38,154 +38,154 @@ def slerp(q1, q2, t):
     return result
 
 class PoseEstimator:
-	def __init__(self, left_camera, right_camera, left_poses, right_poses, marker_type, output, frame):
-		self.marker_type = marker_type
-		#rospy.loginfo(marker_type)
-		if self.marker_type=="AR":
-			msg_type = ARMarkers
-			self.output = ARMarkers()
-			self.right_poses_dict = {}
-			self.left_poses_dict = {}
-		elif self.marker_type=="CHESS":
-			msg_type = PoseStamped
-			self.output = PoseStamped()
-			self.left_pose = None
-			self.right_pose = None
-		self.left_point_subscriber = rospy.Subscriber(left_poses, msg_type, self.left_handle_markers)
-		self.right_point_subscriber = rospy.Subscriber(right_poses, msg_type, self.right_handle_markers)
-		self.output_topic = output
-		self.output_publisher = rospy.Publisher(self.output_topic, msg_type)
-		self.left_info_sub = rospy.Subscriber("%s/camera_info"%left_camera, CameraInfo, self.update_left_info)
-		self.right_info_sub = rospy.Subscriber("%s/camera_info"%right_camera, CameraInfo, self.update_right_info)
-		self.transform_listener = tf.TransformListener()
-		self.left_frame = "left_"+frame
-		self.right_frame = "right_"+frame
-		self.frame = frame
+    def __init__(self, left_camera, right_camera, left_poses, right_poses, marker_type, output, frame):
+        self.marker_type = marker_type
+        #rospy.loginfo(marker_type)
+        if self.marker_type=="AR":
+            msg_type = ARMarkers
+            self.output = ARMarkers()
+            self.right_poses_dict = {}
+            self.left_poses_dict = {}
+        elif self.marker_type=="CHESS":
+            msg_type = PoseStamped
+            self.output = PoseStamped()
+            self.left_pose = None
+            self.right_pose = None
+        self.left_point_subscriber = rospy.Subscriber(left_poses, msg_type, self.left_handle_markers)
+        self.right_point_subscriber = rospy.Subscriber(right_poses, msg_type, self.right_handle_markers)
+        self.output_topic = output
+        self.output_publisher = rospy.Publisher(self.output_topic, msg_type)
+        self.left_info_sub = rospy.Subscriber("%s/camera_info"%left_camera, CameraInfo, self.update_left_info)
+        self.right_info_sub = rospy.Subscriber("%s/camera_info"%right_camera, CameraInfo, self.update_right_info)
+        self.transform_listener = tf.TransformListener()
+        self.left_frame = "left_"+frame
+        self.right_frame = "right_"+frame
+        self.frame = frame
 
-	def update_left_info(self, cam_info):
-		self.left_info = cam_info
+    def update_left_info(self, cam_info):
+        self.left_info = cam_info
 
-	def update_right_info(self, cam_info):
-		self.right_info = cam_info
+    def update_right_info(self, cam_info):
+        self.right_info = cam_info
 
-	# called when a list of AR markers is published for the right camera
-	# stores poses in a dictionary that maps from id number to pose
-	def right_handle_markers(self, right_data):
-		if self.marker_type == "AR":
-			for marker in right_data.markers:
-				self.right_poses_dict[marker.id] = marker
-		elif self.marker_type == "CHESS":
-			self.right_pose = right_data
-		self.handle_both()	
+    # called when a list of AR markers is published for the right camera
+    # stores poses in a dictionary that maps from id number to pose
+    def right_handle_markers(self, right_data):
+        if self.marker_type == "AR":
+            for marker in right_data.markers:
+                self.right_poses_dict[marker.id] = marker
+        elif self.marker_type == "CHESS":
+            self.right_pose = right_data
+        self.handle_both()
 
-	# called when a list of AR markers is published for the left camera
-	# stores poses in a dictionary that maps from id number to pose
-	def left_handle_markers(self, left_data):
-		if self.marker_type == "AR":
-			for marker in left_data.markers:
-				self.left_poses_dict[marker.id] = marker
-		elif self.marker_type == "CHESS":
-			self.left_pose = left_data
-			#print tfx.pose(self.left_pose.pose)
-			#print tfx.tb_angles(self.left_pose.pose).matrix
-		self.handle_both()
+    # called when a list of AR markers is published for the left camera
+    # stores poses in a dictionary that maps from id number to pose
+    def left_handle_markers(self, left_data):
+        if self.marker_type == "AR":
+            for marker in left_data.markers:
+                self.left_poses_dict[marker.id] = marker
+        elif self.marker_type == "CHESS":
+            self.left_pose = left_data
+            #print tfx.pose(self.left_pose.pose)
+            #print tfx.tb_angles(self.left_pose.pose).matrix
+        self.handle_both()
 
-	# waits until there are values in both right_poses_dict and left_poses_dict
-	# calls helper functions to calculate more accurate poses, and publishes those poses
-	# then clears the dictionaries
-	def handle_both(self):
-		if self.marker_type == "AR":
-			if self.right_poses_dict and self.left_poses_dict:
-				self.calculate_output()
-				self.publish()
-				self.left_poses_dict = {}
-				self.right_poses_dict = {}	 
-		elif self.marker_type == "CHESS":
-			if self.right_pose and self.left_pose:   	
-				self.calculate_output()
-				self.publish()
-				self.left_pose = None
-				self.right_pose = None    
+    # waits until there are values in both right_poses_dict and left_poses_dict
+    # calls helper functions to calculate more accurate poses, and publishes those poses
+    # then clears the dictionaries
+    def handle_both(self):
+        if self.marker_type == "AR":
+            if self.right_poses_dict and self.left_poses_dict:
+                self.calculate_output()
+                self.publish()
+                self.left_poses_dict = {}
+                self.right_poses_dict = {}         
+        elif self.marker_type == "CHESS":
+            if self.right_pose and self.left_pose:           
+                self.calculate_output()
+                self.publish()
+                self.left_pose = None
+                self.right_pose = None    
 
-	# goes through the poses in the right_poses_dict and the left_poses_dict and calculates 
-	# a more accurate value for them; calls the helper function convert_stereo
-	#FIXME currently ignores poses if they are not in both the right and left cameras; but will want to remedy that later on
-	def calculate_output(self):
-		if self.marker_type == "AR":
-			joints = []
-			poses = []
-			for id_number in self.right_poses_dict.keys():
-				if id_number in self.left_poses_dict.keys():
-					marker = ARMarker()
-					marker.header = self.left_poses_dict[id_number].header
-					marker.id = id_number
-					marker.confidence = self.left_poses_dict[id_number].confidence#FIXME confidence is currently set equal to confidence of left pose
-					marker.pose = self.convert_stereo(self.left_poses_dict[id_number].pose, self.right_poses_dict[id_number].pose)
-					self.output.markers.append(marker)
-		elif self.marker_type == "CHESS":
-			self.output = PoseStamped()
-			stereoModel = image_geometry.StereoCameraModel()
- 		        stereoModel.fromCameraInfo(self.left_info, self.right_info)
-			(u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel((self.left_pose.pose.position.x,self.left_pose.pose.position.y,self.left_pose.pose.position.z) )
-			self.left_pose.pose.position.x = u_l
-			self.left_pose.pose.position.y = v_l
-			self.right_pose.pose.position.x = u_r
-			self.right_pose.pose.position.y = v_r
-			self.output.pose = self.convert_stereo(self.left_pose, self.right_pose)
-			self.output.header.stamp = rospy.Time.now()
-			self.output.header.frame_id = self.left_frame
-			rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
-			rospy.loginfo(self.output_topic)
-		
+    # goes through the poses in the right_poses_dict and the left_poses_dict and calculates 
+    # a more accurate value for them; calls the helper function convert_stereo
+    #FIXME currently ignores poses if they are not in both the right and left cameras; but will want to remedy that later on
+    def calculate_output(self):
+        if self.marker_type == "AR":
+            joints = []
+            poses = []
+            for id_number in self.right_poses_dict.keys():
+                if id_number in self.left_poses_dict.keys():
+                    marker = ARMarker()
+                    marker.header = self.left_poses_dict[id_number].header
+                    marker.id = id_number
+                    marker.confidence = self.left_poses_dict[id_number].confidence#FIXME confidence is currently set equal to confidence of left pose
+                    marker.pose = self.convert_stereo(self.left_poses_dict[id_number].pose, self.right_poses_dict[id_number].pose)
+                    self.output.markers.append(marker)
+        elif self.marker_type == "CHESS":
+            self.output = PoseStamped()
+            stereoModel = image_geometry.StereoCameraModel()
+            stereoModel.fromCameraInfo(self.left_info, self.right_info)
+            (u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel((self.left_pose.pose.position.x,self.left_pose.pose.position.y,self.left_pose.pose.position.z) )
+            self.left_pose.pose.position.x = u_l
+            self.left_pose.pose.position.y = v_l
+            self.right_pose.pose.position.x = u_r
+            self.right_pose.pose.position.y = v_r
+            self.output.pose = self.convert_stereo(self.left_pose, self.right_pose)
+            self.output.header.stamp = rospy.Time.now()
+            self.output.header.frame_id = self.left_frame
+            rospy.loginfo("HEREE+++++++++++++++++++++++++++++++++++")
+            rospy.loginfo(self.output_topic)
+            
 
-	# publishes the message with joints and poses
-	def publish(self):
-		#print "data"
-		#print "[%d, %d, %d, %d]"%self.output.pose.pose.orientation.x, self.output.pose.pose.orientation.y, self.output.pose.pose.orientation.z, self.output.pose.pose.orientation.w
-		#print tfx.pose(self.output.pose.pose)
-		self.output_publisher.publish(self.output)	
-		if self.marker_type == "AR":
-			self.output = ARMarkers()
-		elif self.marker_type == "CHESS":
-			self.output = PoseStamped()
+    # publishes the message with joints and poses
+    def publish(self):
+        #print "data"
+        #print "[%d, %d, %d, %d]"%self.output.pose.pose.orientation.x, self.output.pose.pose.orientation.y, self.output.pose.pose.orientation.z, self.output.pose.pose.orientation.w
+        #print tfx.pose(self.output.pose.pose)
+        self.output_publisher.publish(self.output)        
+        if self.marker_type == "AR":
+            self.output = ARMarkers()
+        elif self.marker_type == "CHESS":
+            self.output = PoseStamped()
 
-	# takes in two PoseWithCovariance messages and returns a more accurate pose based on their values 
-	# uses the stereo_model object from the image_geometry module for calculations
-	def convert_stereo(self,left,right):
-		u = left.pose.position.x #PoseStamped.Pose.Position.x
-		v = right.pose.position.y
-		disparity = left.pose.position.x - right.pose.position.x
-		#u = left[0]
-		#v = left[1]
-		#disparity = left[0] - right[0]
+    # takes in two PoseWithCovariance messages and returns a more accurate pose based on their values 
+    # uses the stereo_model object from the image_geometry module for calculations
+    def convert_stereo(self,left,right):
+        u = left.pose.position.x #PoseStamped.Pose.Position.x
+        v = right.pose.position.y
+        disparity = left.pose.position.x - right.pose.position.x
+        #u = left[0]
+        #v = left[1]
+        #disparity = left[0] - right[0]
 
-		stereo_model = image_geometry.StereoCameraModel()
-		stereo_model.fromCameraInfo(self.left_info, self.right_info)
-		(x,y,z) = stereo_model.projectPixelTo3d((u,v),disparity)
-		accurate_pose = PoseWithCovariance()
-		accurate_pose.pose.position.x = x
-		accurate_pose.pose.position.y = y
-		accurate_pose.pose.position.z = z
-		self.transform_listener.waitForTransform(self.left_frame, self.right_frame, rospy.Time.now(), rospy.Duration(4.0)) 
+        stereo_model = image_geometry.StereoCameraModel()
+        stereo_model.fromCameraInfo(self.left_info, self.right_info)
+        (x,y,z) = stereo_model.projectPixelTo3d((u,v),disparity)
+        accurate_pose = PoseWithCovariance()
+        accurate_pose.pose.position.x = x
+        accurate_pose.pose.position.y = y
+        accurate_pose.pose.position.z = z
+        self.transform_listener.waitForTransform(self.left_frame, self.right_frame, rospy.Time.now(), rospy.Duration(4.0)) 
 
-		right_quat_stamped = QuaternionStamped()
-		right_quat_stamped.quaternion = right.pose.orientation
-		right_quat_stamped.header.frame_id = self.right_frame
-		transformed_orientation = self.transform_listener.transformQuaternion(self.left_frame, right_quat_stamped) 
-		accurate_pose.pose.orientation = slerp(transformed_orientation.quaternion, left.pose.orientation, 0.5) 
-		return accurate_pose.pose
+        right_quat_stamped = QuaternionStamped()
+        right_quat_stamped.quaternion = right.pose.orientation
+        right_quat_stamped.header.frame_id = self.right_frame
+        transformed_orientation = self.transform_listener.transformQuaternion(self.left_frame, right_quat_stamped) 
+        accurate_pose.pose.orientation = slerp(transformed_orientation.quaternion, left.pose.orientation, 0.5) 
+        return accurate_pose.pose
 
 def main():
-	rospy.init_node("pose_estimator")
-	left_camera = rospy.get_param("~left", "/AD/left")
-	right_camera = rospy.get_param("~right", "/AD/right")
-	left_poses = rospy.get_param("~left_poses", "base_cb_left")
-	right_poses = rospy.get_param("~right_poses", "base_cb_right")
-	marker_type = rospy.get_param("~marker", "CHESS")
-	output = rospy.get_param("~output", "base_cb")
-	frame = rospy.get_param("~frame", "AD")
-	p = PoseEstimator(left_camera, right_camera, left_poses, right_poses, marker_type, output, frame)
-	rospy.spin()
+    rospy.init_node("pose_estimator")
+    left_camera = rospy.get_param("~left", "/AD/left")
+    right_camera = rospy.get_param("~right", "/AD/right")
+    left_poses = rospy.get_param("~left_poses", "base_cb_left")
+    right_poses = rospy.get_param("~right_poses", "base_cb_right")
+    marker_type = rospy.get_param("~marker", "CHESS")
+    output = rospy.get_param("~output", "base_cb")
+    frame = rospy.get_param("~frame", "AD")
+    p = PoseEstimator(left_camera, right_camera, left_poses, right_poses, marker_type, output, frame)
+    rospy.spin()
 
 
 if __name__=='__main__':

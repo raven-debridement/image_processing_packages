@@ -4,7 +4,7 @@ import roslib
 roslib.load_manifest('raven_pose_estimator')
 import rospy
 
-import Util
+import raven_pose_estimator.util as Util
 
 import cv
 
