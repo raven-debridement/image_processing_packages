@@ -236,6 +236,14 @@ class ColorSegmenter():
 
         self.prevQuaternion = None
         
+        self.right_ROI_pub = rospy.Publisher('%s_ROI_right' % self.arm, Image)
+        self.right_color1_pub = rospy.Publisher('%s_%s_right' % (self.arm, self.color1_name), Image)
+        self.right_color2_pub = rospy.Publisher('%s_%s_right' % (self.arm, self.color2_name), Image)
+        
+        self.left_ROI_pub = rospy.Publisher('%s_ROI_left' % self.arm, Image)
+        self.left_color1_pub = rospy.Publisher('%s_%s_left' % (self.arm, self.color1_name), Image)
+        self.left_color2_pub = rospy.Publisher('%s_%s_left' % (self.arm, self.color2_name), Image)
+        
         self.show_images = kwargs.get('show_images')
         self.print_messages = kwargs.get('print_messages')
         self.show_time = kwargs.get('show_time')
@@ -263,6 +271,9 @@ class ColorSegmenter():
         """
         self.t0_left = time.clock()
         left_img, left_color2, left_color1, left_color2_contour, left_color1_contour, self.left_color2_found, self.left_color1_found = self.process(image, "left")
+        self.left_ROI_pub.publish(self.bridge.cv_to_imgmsg(left_img))
+        self.left_color1_pub.publish(self.bridge.cv_to_imgmsg(left_color1))
+        self.left_color2_pub.publish(self.bridge.cv_to_imgmsg(left_color2))
         if self.show_images:
             cv.ShowImage("%s arm left camera ROI" % self.arm, left_img)
             cv.ShowImage("%s arm left camera %s" % (self.arm, self.color2_name), left_color2)
@@ -278,6 +289,9 @@ class ColorSegmenter():
         """
         self.t0_right = time.clock()
         right_img, right_color2, right_color1, right_color2_contour, right_color1_contour, self.right_color2_found, self.right_color1_found = self.process(image, "right")
+        self.right_ROI_pub.publish(self.bridge.cv_to_imgmsg(right_img))
+        self.right_color1_pub.publish(self.bridge.cv_to_imgmsg(right_color1))
+        self.right_color2_pub.publish(self.bridge.cv_to_imgmsg(right_color2))
         if self.show_images:
             cv.ShowImage("%s arm right camera ROI" % self.arm, right_img)
             cv.ShowImage("%s arm right camera %s" % (self.arm, self.color2_name), right_color2)
