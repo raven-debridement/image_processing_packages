@@ -19,6 +19,7 @@ from geometry_msgs.msg import Point, PointStamped, Quaternion, PoseStamped, Poly
 import tf
 import image_geometry
 import time
+import functools
 
 import message_filters
 from threading import Lock
@@ -26,7 +27,11 @@ from threading import Lock
 import tf.transformations as tft
 import tfx
 
-import code
+import IPython
+
+from collections import namedtuple
+ROI_size = namedtuple('ROI_size','width height')
+
 
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
@@ -36,14 +41,14 @@ import code
 
 # right gripper
 GREEN_LOWER = cv.Scalar(38, 50, 50) #THESE ARE THE GREEN PAPER VALUES
-GREEN_UPPER = cv.Scalar(88, 255, 255)
-ORANGE_LOWER = cv.Scalar(5, 50, 180) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(35, 255, 255)
+GREEN_UPPER = cv.Scalar(95, 255, 255)
+ORANGE_LOWER = cv.Scalar(5, 40, 200) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_UPPER = cv.Scalar(30, 255, 255)
 
 # left gripper
-PURPLE_LOWER = cv.Scalar(120, 60, 100)
+PURPLE_LOWER = cv.Scalar(120, 25, 90)
 PURPLE_UPPER = cv.Scalar(170, 255, 255)
-BLUE_LOWER = cv.Scalar(90, 100, 100)
+BLUE_LOWER = cv.Scalar(96, 45, 120)
 BLUE_UPPER = cv.Scalar(120, 255, 255)
 
 # TEMP: since only for one gripper at a time
@@ -54,8 +59,9 @@ BLUE_UPPER = cv.Scalar(120, 255, 255)
 
 RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
 RED_UPPER = cv.Scalar(3, 255, 255)
-WIDTH_ROI = 400
-HEIGHT_ROI = 400
+
+DEFAULT_ROI_SIZE = ROI_size(600,600)
+
 SLERP = True
 DYNAMIC_SLERP = False
 SLERP_CONSTANT = 0.1
@@ -185,120 +191,105 @@ def find_contours(im, name):
     contours, hierarchy = cv2.findContours(np.asarray(thresh[:,:]),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     return contours
 
+class ColorSidePoints(object):
+    def __init__(self):
+        self.found = False
+        self.upper = None
+        self.lower = None
 
+class ColorPoints(object):
+    def __init__(self, name, hsv_upper, hsv_lower):
+        self.name = name
+        self.hsv_upper = hsv_upper
+        self.hsv_lower = hsv_lower
+        self.left = ColorSidePoints()
+        self.right = ColorSidePoints()
+    
+    def __getitem__(self, name):
+        return getattr(self, name)
 
 ##################
 #   MAIN CLASS   #
 ##################
 
-class ColorSegmenter():
-    def __init__(self, arm, left_camera, right_camera, color1=None,color2=None, **kwargs):
+class ColorSegmenter(object):
+    def __init__(self, arm, camera_name, gripper_ROI_wh, color1=None,color2=None, **kwargs):
         self.arm = arm
-        self.tool_frame = 'tool_' + self.arm
+        self.sides = ['left','right']
+        self.camera_name = camera_name
+        self.camera = dict((side, '%s/%s' % (camera_name,side)) for side in self.sides)
         
-        self.leftInfo = self.rightInfo = None
+        self.show_images = kwargs.get('show_images')
+        self.print_messages = kwargs.get('print_messages')
+        self.show_time = kwargs.get('show_time')
+        
+        self.tool_frame = '/tool_' + self.arm
+        self.camera_frame = None
+        
+        self.color1 = ColorPoints(*color1)
+        self.color2 = ColorPoints(*color2)
+        
+        
+        self.locks = dict((side,Lock()) for side in self.sides)
         self.listener = tf.TransformListener()
         self.bridge = cv_bridge.CvBridge()
-        self.leftImg = self.rightImg = None
-
-        rospy.Subscriber('/%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
-        rospy.Subscriber('/%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
-        rospy.Subscriber('/%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
-        rospy.Subscriber('/%s/camera_info'%right_camera, CameraInfo, self.rightInfoCallback)
+        
+        self.info = {}
+        self.img = {}
+        
+        self.gripper_ROI_size = ROI_size(*gripper_ROI_wh)
+        self.gripper_ROI = {}
+        
+        self.red_ROI = {}
+        
+        self.t0 = {}
+        
+        self.prevQuaternion = None
 
         self.quat_pub = rospy.Publisher('tape_orientation_' + self.arm, Quaternion)
         self.pose_pub = rospy.Publisher('tape_pose_' + self.arm, PoseStamped)
         self.polygon_pub = rospy.Publisher('polygon_' + self.arm, PolygonStamped)
         
-        self.red_service = rospy.Service('thresh_red_' + self.arm, ThreshRed, self.threshRed)
-        
-        self.color1_name = color1[0]
-        self.color1_hsv_lower = color1[1]
-        self.color1_hsv_upper = color1[2]
-        
-        self.color2_name = color2[0]
-        self.color2_hsv_lower = color2[1]
-        self.color2_hsv_upper = color2[2]
+        self.gripper_ROI_pub = dict((side,rospy.Publisher('%s_ROI_%s' % (self.arm, side), Image)) for side in self.sides) 
+        self.color1_pub = dict((side,rospy.Publisher('%s_%s_%s' % (self.arm, self.color1.name, side), Image)) for side in self.sides)
+        self.color2_pub = dict((side,rospy.Publisher('%s_%s_%s' % (self.arm, self.color2.name, side), Image)) for side in self.sides)
 
-        self.left_color1_found = False
-        self.left_color2_found = False
-        self.right_color1_found = False
-        self.right_color2_found = False
-
-        self.color2_left_lower_pt = None
-        self.color2_left_upper_pt = None
-        self.color2_right_lower_pt = None
-        self.color2_right_upper_pt = None
-        self.color1_left_lower_pt = None
-        self.color1_left_upper_pt = None
-        self.color1_right_lower_pt = None
-        self.color1_right_upper_pt = None
-
-        self.prevQuaternion = None
+        for side in self.sides:
+            rospy.Subscriber('%s/camera_info' % self.camera[side], CameraInfo, functools.partial(self._infoCallback,side))
+            rospy.Subscriber('%s/image_rect_color' % self.camera[side], Image, functools.partial(self._imageCallback,side))
         
-        self.right_ROI_pub = rospy.Publisher('%s_ROI_right' % self.arm, Image)
-        self.right_color1_pub = rospy.Publisher('%s_%s_right' % (self.arm, self.color1_name), Image)
-        self.right_color2_pub = rospy.Publisher('%s_%s_right' % (self.arm, self.color2_name), Image)
-        
-        self.left_ROI_pub = rospy.Publisher('%s_ROI_left' % self.arm, Image)
-        self.left_color1_pub = rospy.Publisher('%s_%s_left' % (self.arm, self.color1_name), Image)
-        self.left_color2_pub = rospy.Publisher('%s_%s_left' % (self.arm, self.color2_name), Image)
-        
-        self.show_images = kwargs.get('show_images')
-        self.print_messages = kwargs.get('print_messages')
-        self.show_time = kwargs.get('show_time')
+        #self.red_service = rospy.Service('thresh_red_' + self.arm, ThreshRed, self.threshRed)
     
     ################################
     #   SUBSCRIBER BOUND METHODS   #
     ################################
-    def leftInfoCallback(self, info):
-        """ 
-        Saves the info for the left camera        
-        """
-        self.leftInfo = info
-
-
-    def rightInfoCallback(self, info):
-        """ 
-        Saves the info for the right camera        
-        """
-        self.rightInfo = info
-        
-
-    def leftImageCallback(self, image):
+    def _infoCallback(self, side, info):
+        self.info[side] = info
+        if side == 'left' and not self.camera_frame:
+            self.camera_frame = info.header.frame_id
+    
+    def _imageCallback(self, side, image):
         """         
-        Takes in the image from the left camera and processes it 
+        Takes in the image from the camera and processes it 
         """
-        self.t0_left = time.clock()
-        left_img, left_color2, left_color1, left_color2_contour, left_color1_contour, self.left_color2_found, self.left_color1_found = self.process(image, "left")
-        self.left_ROI_pub.publish(self.bridge.cv_to_imgmsg(left_img))
-        self.left_color1_pub.publish(self.bridge.cv_to_imgmsg(left_color1))
-        self.left_color2_pub.publish(self.bridge.cv_to_imgmsg(left_color2))
-        if self.show_images:
-            cv.ShowImage("%s arm left camera ROI" % self.arm, left_img)
-            cv.ShowImage("%s arm left camera %s" % (self.arm, self.color2_name), left_color2)
-            cv.ShowImage("%s arm left camera %s" % (self.arm, self.color1_name), left_color1)
-        cv.WaitKey(3)
-        self.handleBoth()
-        self.left_color2_found = self.left_color1_found = False
-        
+        if self.locks[side].locked_lock():
+            return
 
-    def rightImageCallback(self, image):
-        """ 
-        Takes in the image from the right camera and processes it 
-        """
-        self.t0_right = time.clock()
-        right_img, right_color2, right_color1, right_color2_contour, right_color1_contour, self.right_color2_found, self.right_color1_found = self.process(image, "right")
-        self.right_ROI_pub.publish(self.bridge.cv_to_imgmsg(right_img))
-        self.right_color1_pub.publish(self.bridge.cv_to_imgmsg(right_color1))
-        self.right_color2_pub.publish(self.bridge.cv_to_imgmsg(right_color2))
-        if self.show_images:
-            cv.ShowImage("%s arm right camera ROI" % self.arm, right_img)
-            cv.ShowImage("%s arm right camera %s" % (self.arm, self.color2_name), right_color2)
-            cv.ShowImage("%s arm right camera %s" % (self.arm, self.color1_name), right_color1)
-        cv.WaitKey(3)
-        self.handleBoth()
-        self.right_color2_found = self.right_color1_found = False
+        with self.locks[side]:
+
+            self.t0[side] = time.clock()
+            color2, color1, color2_contour, color1_contour = self.process(image, side)
+            img = self.gripper_ROI[side]
+            self.gripper_ROI_pub[side].publish(self.bridge.cv_to_imgmsg(img))
+            self.color1_pub[side].publish(self.bridge.cv_to_imgmsg(color1))
+            self.color2_pub[side].publish(self.bridge.cv_to_imgmsg(color2))
+            if self.show_images:
+                cv.ShowImage("%s arm %s camera ROI" % (self.arm, side), img)
+                cv.ShowImage("%s arm %s camera %s" % (self.arm, side, self.color2.name), color2)
+                cv.ShowImage("%s arm %s camera %s" % (self.arm, side, self.color1.name), color1)
+            cv.WaitKey(3)
+            self.handleBoth()
+            self.color2[side].found = self.color1[side].found = False
 
 
     def threshRed(self, i):
@@ -329,58 +320,45 @@ class ColorSegmenter():
         return ThreshRedResponse(0)
 
 
-    def process(self, image, flag):
+    def process(self, image, side):
         """
         thresholds the image for a certain hsv range and returns the coordinates of the centroid, 
         and the coordinates of the closest point to the centroid
         """
         cv_image = self.bridge.imgmsg_to_cv(image, "bgr8")
-        ROI_left, ROI_right, pixelLeft, pixelRight = self.determineROI(flag)
-        if flag == "left":
-            ROI = ROI_left
-            pixel = pixelLeft
-        elif flag == "right":
-            ROI = ROI_right
-            pixel = pixelRight
-        heightOffset = int(pixel[1]) - HEIGHT_ROI
-        widthOffset = int(pixel[0]) - WIDTH_ROI
+        self.img[side] = cv_image
+        
+        ROI, pixel = self.determineROI(side)
+        
+        ROI_height = self.gripper_ROI_size.height
+        ROI_width = self.gripper_ROI_size.width
+        
+        heightOffset = int(pixel[1]) - ROI_height
+        widthOffset = int(pixel[0]) - ROI_width
         if heightOffset < 0:
             heightOffset = 0
         if widthOffset < 0:
             widthOffset = 0
-        cv_image = cv_image[heightOffset:heightOffset+2*HEIGHT_ROI, widthOffset:widthOffset+2*WIDTH_ROI]
-        if flag == "left":
-            self.leftImg = cv_image
-        elif flag == "right":
-            self.rightImg = cv_image
+        cv_image = cv_image[heightOffset:heightOffset+2*ROI_height, widthOffset:widthOffset+2*ROI_width]
+        
+        self.gripper_ROI[side] = cv_image
+        
         hsvImg = cv.CreateImage(cv.GetSize(cv_image),8,3)
         color1ThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
-        color1ThreshImg = threshold(cv_image, hsvImg, color1ThreshImg, self.color1_hsv_lower, self.color1_hsv_upper)
+        color1ThreshImg = threshold(cv_image, hsvImg, color1ThreshImg, self.color1.hsv_lower, self.color1.hsv_upper)
         color2ThreshImg = cv.CreateImage(cv.GetSize(cv_image),8,1)
-        color2ThreshImg = threshold(cv_image, hsvImg, color2ThreshImg, self.color2_hsv_lower, self.color2_hsv_upper)
+        color2ThreshImg = threshold(cv_image, hsvImg, color2ThreshImg, self.color2.hsv_lower, self.color2.hsv_upper)
         color2ContourImg = cv.CloneImage(color2ThreshImg)
         color1ContourImg = cv.CloneImage(color1ThreshImg)
-        color2_contours = find_contours(color2ContourImg, self.color2_name) #FIXME remove later
-        color1_contours = find_contours(color1ContourImg, self.color1_name) #FIXME remove later
-        if flag=="left":
-            self.color2_left_lower_pt, self.color2_left_upper_pt, left_color2_found = find_endpoints(color2_contours)
-            self.color1_left_lower_pt, self.color1_left_upper_pt, left_color1_found = find_endpoints(color1_contours)
-            self.color2_left_lower_pt = self.addOffset(self.color2_left_lower_pt, widthOffset, heightOffset)
-            self.color2_left_upper_pt = self.addOffset(self.color2_left_upper_pt, widthOffset, heightOffset)
-            self.color1_left_lower_pt = self.addOffset(self.color1_left_lower_pt, widthOffset, heightOffset)
-            self.color1_left_upper_pt = self.addOffset(self.color1_left_upper_pt, widthOffset, heightOffset)
-            color2_found = left_color2_found
-            color1_found = left_color1_found
-        elif flag=="right":
-            self.color2_right_lower_pt, self.color2_right_upper_pt, right_color2_found = find_endpoints(color2_contours)
-            self.color1_right_lower_pt, self.color1_right_upper_pt, right_color1_found = find_endpoints(color1_contours)
-            self.color2_right_lower_pt = self.addOffset(self.color2_right_lower_pt, widthOffset, heightOffset)
-            self.color2_right_upper_pt = self.addOffset(self.color2_right_upper_pt, widthOffset, heightOffset)
-            self.color1_right_lower_pt = self.addOffset(self.color1_right_lower_pt, widthOffset, heightOffset)
-            self.color1_right_upper_pt = self.addOffset(self.color1_right_upper_pt, widthOffset, heightOffset)
-            color2_found = right_color2_found
-            color1_found = right_color1_found
-        return cv_image, color2ThreshImg, color1ThreshImg, color2ContourImg, color1ContourImg, color2_found, color1_found
+        color2_contours = find_contours(color2ContourImg, self.color2.name) #FIXME remove later
+        color1_contours = find_contours(color1ContourImg, self.color1.name) #FIXME remove later
+        self.color2[side].lower, self.color2[side].upper, self.color2[side].found = find_endpoints(color2_contours)
+        self.color1[side].lower, self.color1[side].upper, self.color1[side].found = find_endpoints(color1_contours)
+        self.color2[side].lower = self.addOffset(self.color2[side].lower, widthOffset, heightOffset)
+        self.color2[side].upper = self.addOffset(self.color2[side].upper, widthOffset, heightOffset)
+        self.color1[side].lower = self.addOffset(self.color1[side].lower, widthOffset, heightOffset)
+        self.color1[side].upper = self.addOffset(self.color1[side].upper, widthOffset, heightOffset)
+        return color2ThreshImg, color1ThreshImg, color2ContourImg, color1ContourImg
 
 
     def handleBoth(self):
@@ -389,18 +367,18 @@ class ColorSegmenter():
         orientation and position of the gripper 
         """
         try:
-            found = self.left_color1_found and self.left_color2_found and self.right_color1_found and self.right_color2_found
+            found = self.color1.left.found and self.color2.left.found and self.color1.right.found and self.color2.right.found
             if self.print_messages:
                 print "found"
-                print "left_%s:\t\t%s" % (self.color1_name,self.left_color1_found)
-                print "right_%s:\t\t%s" % (self.color1_name,self.right_color1_found)
-                print "left_%s:\t\t%s" % (self.color2_name,self.left_color2_found)
-                print "right_%s:\t\t%s" % (self.color2_name,self.right_color2_found)
+                print "left_%s:\t\t%s" % (self.color1.name,self.color1.left.found)
+                print "right_%s:\t\t%s" % (self.color1.name,self.color1.right.found)
+                print "left_%s:\t\t%s" % (self.color2.name,self.color2.left.found)
+                print "right_%s:\t\t%s" % (self.color2.name,self.color2.right.found)
             if found:
-                color2_lower_pt = self.convertStereo(self.color2_left_lower_pt[0], self.color2_left_lower_pt[1], math.fabs(self.color2_left_lower_pt[0] - self.color2_right_lower_pt[0]))
-                color2_upper_pt = self.convertStereo(self.color2_left_upper_pt[0], self.color2_left_upper_pt[1], math.fabs(self.color2_left_upper_pt[0] - self.color2_right_upper_pt[0]))
-                color1_lower_pt = self.convertStereo(self.color1_left_lower_pt[0], self.color1_left_lower_pt[1], math.fabs(self.color1_left_lower_pt[0] - self.color1_right_lower_pt[0]))
-                color1_upper_pt = self.convertStereo(self.color1_left_upper_pt[0], self.color1_left_upper_pt[1], math.fabs(self.color1_left_upper_pt[0] - self.color1_right_upper_pt[0]))
+                color2_lower_pt = self.convertStereo(self.color2.left.lower[0], self.color2.left.lower[1], math.fabs(self.color2.left.lower[0] - self.color2.right.lower[0]))
+                color2_upper_pt = self.convertStereo(self.color2.left.upper[0], self.color2.left.upper[1], math.fabs(self.color2.left.upper[0] - self.color2.right.upper[0]))
+                color1_lower_pt = self.convertStereo(self.color1.left.lower[0], self.color1.left.lower[1], math.fabs(self.color1.left.lower[0] - self.color1.right.lower[0]))
+                color1_upper_pt = self.convertStereo(self.color1.left.upper[0], self.color1.left.upper[1], math.fabs(self.color1.left.upper[0] - self.color1.right.upper[0]))
                 p = Point()
                 position = ((color2_lower_pt[0]+color2_upper_pt[0]+color1_lower_pt[0]+color1_upper_pt[0])/4, (color2_lower_pt[1]+color2_upper_pt[1]+color1_lower_pt[1]+color1_upper_pt[1])/4, (color2_lower_pt[2]+color2_upper_pt[2]+color1_lower_pt[2]+color1_upper_pt[2])/4)
                 p.x = position[0]
@@ -451,12 +429,12 @@ class ColorSegmenter():
                 pose = PoseStamped()
                 pose.pose.position = p
                 pose.pose.orientation = q
-                pose.header.frame_id = self.leftInfo.header.frame_id
+                pose.header.frame_id = self.camera_frame
                 pose.header.stamp = rospy.Time.now()
                 self.quat_pub.publish(q)
                 self.pose_pub.publish(pose)
-                t_left = time.clock() - self.t0_left
-                t_right = time.clock() - self.t0_right
+                t_left = time.clock() - self.t0['left']
+                t_right = time.clock() - self.t0['right']
                 if self.show_time:
                     print "RUNNING TIME FROM LEFT IMAGE: "+str(t_left)
                     print "RUNNING TIME FROM RIGHT IMAGE: "+str(t_right)
@@ -484,20 +462,28 @@ class ColorSegmenter():
     ########################################
 
 
-    def determineROI(self, flag):
+    def determineROI(self, side=None):
         """
         Determines the boundaries of a region of interest, based on 
         the pixel coordinates of the gripper as given by the inverse kinematics of the robot
         """
+        ROI_width = self.gripper_ROI_size.width
+        ROI_height = self.gripper_ROI_size.height
+        
         pose = tfx.pose([0,0,0], [0,0,0,1], frame=self.tool_frame, stamp=rospy.Time.now())
-        tf_tool_to_cam = tfx.lookupTransform('/left_BC',self.tool_frame,wait=10)        
+        tf_tool_to_cam = tfx.lookupTransform(self.camera_frame,self.tool_frame,wait=10)
         pose = tf_tool_to_cam * pose
         stereoModel = image_geometry.StereoCameraModel()
-        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+        stereoModel.fromCameraInfo(self.info['left'], self.info['right'])
         (u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(pose.position.list)
-        ROI_left = ((int(u_l-WIDTH_ROI), int(v_l-HEIGHT_ROI)), (int(u_l+WIDTH_ROI), int(v_l+HEIGHT_ROI)))
-        ROI_right= ((int(u_r-WIDTH_ROI), int(v_r-HEIGHT_ROI)), (int(u_r+WIDTH_ROI), int(v_r+HEIGHT_ROI)))
-        return ROI_left, ROI_right, (u_l, v_l), (u_r, v_r)
+        ROI_left = ((int(u_l-ROI_width), int(v_l-ROI_height)), (int(u_l+ROI_width), int(v_l+ROI_height)))
+        ROI_right= ((int(u_r-ROI_width), int(v_r-ROI_height)), (int(u_r+ROI_width), int(v_r+ROI_height)))
+        ROI = {'left': ROI_left, 'right': ROI_right}
+        uv = {'left': (u_l, v_l), 'right': (u_r, v_r)}
+        if side is None:
+            return ROI, uv
+        else:
+            return ROI[side], uv[side]
         
 
     def addOffset(self, pt, xOffset, yOffset):
@@ -555,7 +541,7 @@ class ColorSegmenter():
         Converts two pixel coordinates u and v along with the disparity to give PointStamped 
         """
         stereoModel = image_geometry.StereoCameraModel()
-        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+        stereoModel.fromCameraInfo(self.info['left'], self.info['right'])
         (x,y,z) = stereoModel.projectPixelTo3d((u,v), disparity)
         return (x,y,z)
 
@@ -570,22 +556,40 @@ def main():
     
     parser = argparse.ArgumentParser()
     
+    parser.add_argument('arm',nargs='?')
     parser.add_argument('--show-images','-i',action='store_true',default=False)
     parser.add_argument('--print-messages',action='store_true',default=False)
     parser.add_argument('--show-time',action='store_true',default=False)
     
     args = parser.parse_args(rospy.myargv()[1:])
+
+    arm = args.arm or rospy.get_param('~arm','R')
+    del args.arm
+
+    if arm == 'R':
+        color1 = ('orange',ORANGE_LOWER,ORANGE_UPPER)
+        color2 = ('green',GREEN_LOWER,GREEN_UPPER)
+    else:
+        color2 = ('purple',PURPLE_LOWER,PURPLE_UPPER)
+        color1 = ('blue',BLUE_LOWER,BLUE_UPPER)
+                        
+
     
-    left_camera = 'BC/left'
-    right_camera = 'BC/right'
+    camera_name = 'BC'
+
+    gs = ColorSegmenter(arm, camera_name, DEFAULT_ROI_SIZE,
+                        color1=color1, color2=color2, **vars(args))
+
+    """
     gs = ColorSegmenter('R', left_camera, right_camera,
                         color1=('orange',ORANGE_LOWER,ORANGE_UPPER),
                         color2=('green',GREEN_LOWER,GREEN_UPPER),
                         **vars(args))
     gs = ColorSegmenter('L', left_camera, right_camera,
-                        color1=('purple',PURPLE_LOWER,PURPLE_UPPER),
-                        color2=('blue',BLUE_LOWER,BLUE_UPPER),
+                        color2=('purple',PURPLE_LOWER,PURPLE_UPPER),
+                        color1=('blue',BLUE_LOWER,BLUE_UPPER),
                         **vars(args))
+    """
     rospy.spin()
 
 
