@@ -26,7 +26,7 @@ from threading import Lock
 import tf.transformations as tft
 import tfx
 
-import code
+import IPython
 
 # adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
@@ -36,14 +36,14 @@ import code
 
 # right gripper
 GREEN_LOWER = cv.Scalar(38, 50, 50) #THESE ARE THE GREEN PAPER VALUES
-GREEN_UPPER = cv.Scalar(88, 255, 255)
-ORANGE_LOWER = cv.Scalar(5, 50, 180) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(35, 255, 255)
+GREEN_UPPER = cv.Scalar(95, 255, 255)
+ORANGE_LOWER = cv.Scalar(5, 40, 200) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_UPPER = cv.Scalar(30, 255, 255)
 
 # left gripper
-PURPLE_LOWER = cv.Scalar(120, 60, 100)
+PURPLE_LOWER = cv.Scalar(120, 25, 90)
 PURPLE_UPPER = cv.Scalar(170, 255, 255)
-BLUE_LOWER = cv.Scalar(90, 100, 100)
+BLUE_LOWER = cv.Scalar(96, 45, 120)
 BLUE_UPPER = cv.Scalar(120, 255, 255)
 
 # TEMP: since only for one gripper at a time
@@ -54,8 +54,8 @@ BLUE_UPPER = cv.Scalar(120, 255, 255)
 
 RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
 RED_UPPER = cv.Scalar(3, 255, 255)
-WIDTH_ROI = 400
-HEIGHT_ROI = 400
+WIDTH_ROI = 600
+HEIGHT_ROI = 600
 SLERP = True
 DYNAMIC_SLERP = False
 SLERP_CONSTANT = 0.1
@@ -201,6 +201,10 @@ class ColorSegmenter():
         self.bridge = cv_bridge.CvBridge()
         self.leftImg = self.rightImg = None
 
+        self.locks = dict()
+        self.locks['%s_leftImage' % self.arm] = Lock()
+        self.locks['%s_rightImage' % self.arm] = Lock()
+
         rospy.Subscriber('/%s/image_rect_color'%left_camera, Image, self.leftImageCallback)
         rospy.Subscriber('/%s/image_rect_color'%right_camera, Image, self.rightImageCallback)
         rospy.Subscriber('/%s/camera_info'%left_camera, CameraInfo, self.leftInfoCallback)
@@ -235,6 +239,7 @@ class ColorSegmenter():
         self.color1_right_upper_pt = None
 
         self.prevQuaternion = None
+
         
         self.right_ROI_pub = rospy.Publisher('%s_ROI_right' % self.arm, Image)
         self.right_color1_pub = rospy.Publisher('%s_%s_right' % (self.arm, self.color1_name), Image)
@@ -269,6 +274,11 @@ class ColorSegmenter():
         """         
         Takes in the image from the left camera and processes it 
         """
+        if self.locks['%s_leftImage' % self.arm].locked_lock():
+            return
+
+        self.locks['%s_leftImage' % self.arm].acquire()
+
         self.t0_left = time.clock()
         left_img, left_color2, left_color1, left_color2_contour, left_color1_contour, self.left_color2_found, self.left_color1_found = self.process(image, "left")
         self.left_ROI_pub.publish(self.bridge.cv_to_imgmsg(left_img))
@@ -282,11 +292,17 @@ class ColorSegmenter():
         self.handleBoth()
         self.left_color2_found = self.left_color1_found = False
         
+        self.locks['%s_leftImage' % self.arm].release()
 
     def rightImageCallback(self, image):
         """ 
         Takes in the image from the right camera and processes it 
         """
+        if self.locks['%s_rightImage' % self.arm].locked_lock():
+            return
+
+        self.locks['%s_rightImage' % self.arm].acquire()
+
         self.t0_right = time.clock()
         right_img, right_color2, right_color1, right_color2_contour, right_color1_contour, self.right_color2_found, self.right_color1_found = self.process(image, "right")
         self.right_ROI_pub.publish(self.bridge.cv_to_imgmsg(right_img))
@@ -299,6 +315,8 @@ class ColorSegmenter():
         cv.WaitKey(3)
         self.handleBoth()
         self.right_color2_found = self.right_color1_found = False
+
+        self.locks['%s_rightImage' % self.arm].release()
 
 
     def threshRed(self, i):
@@ -570,22 +588,41 @@ def main():
     
     parser = argparse.ArgumentParser()
     
+    parser.add_argument('arm',nargs='?')
     parser.add_argument('--show-images','-i',action='store_true',default=False)
     parser.add_argument('--print-messages',action='store_true',default=False)
     parser.add_argument('--show-time',action='store_true',default=False)
     
     args = parser.parse_args(rospy.myargv()[1:])
+
+    arm = args.arm or rospy.get_param('~arm','R')
+    del args.arm
+
+    if arm == 'R':
+        color1 = ('orange',ORANGE_LOWER,ORANGE_UPPER)
+        color2 = ('green',GREEN_LOWER,GREEN_UPPER)
+    else:
+        color2 = ('purple',PURPLE_LOWER,PURPLE_UPPER)
+        color1 = ('blue',BLUE_LOWER,BLUE_UPPER)
+                        
+
     
     left_camera = 'BC/left'
     right_camera = 'BC/right'
+
+    gs = ColorSegmenter(arm, left_camera, right_camera,
+                        color1=color1, color2=color2, **vars(args))
+
+    """
     gs = ColorSegmenter('R', left_camera, right_camera,
                         color1=('orange',ORANGE_LOWER,ORANGE_UPPER),
                         color2=('green',GREEN_LOWER,GREEN_UPPER),
                         **vars(args))
     gs = ColorSegmenter('L', left_camera, right_camera,
-                        color1=('purple',PURPLE_LOWER,PURPLE_UPPER),
-                        color2=('blue',BLUE_LOWER,BLUE_UPPER),
+                        color2=('purple',PURPLE_LOWER,PURPLE_UPPER),
+                        color1=('blue',BLUE_LOWER,BLUE_UPPER),
                         **vars(args))
+    """
     rospy.spin()
 
 
