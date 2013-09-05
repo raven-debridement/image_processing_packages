@@ -174,7 +174,7 @@ def main(args):
 #	[name, cameraName, outputName] = args
 	name = "ClickWindowName"
 	rospy.init_node(name)
-	cameraName = rospy.get_param("~cam","defaultClickPointCamera")
+	cameraName = rospy.get_param("~cam","defaultCameraName")
 	outputName = rospy.get_param("~output","defaultClickPointOutput")
 	gui = ClickWindow(cameraName=cameraName,outputName=outputName)
 	while not rospy.is_shutdown():

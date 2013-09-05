@@ -40,16 +40,16 @@ ROI_size = namedtuple('ROI_size','width height')
 ########################################
 
 # right gripper
-GREEN_LOWER = cv.Scalar(38, 50, 50) #THESE ARE THE GREEN PAPER VALUES
-GREEN_UPPER = cv.Scalar(95, 255, 255)
-ORANGE_LOWER = cv.Scalar(5, 40, 200) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(30, 255, 255)
+GREEN_LOWER = cv.Scalar(38, 35, 50) #THESE ARE THE GREEN PAPER VALUES
+GREEN_UPPER = cv.Scalar(99, 255, 255)
+ORANGE_LOWER = cv.Scalar(5, 30, 200) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_UPPER = cv.Scalar(35, 255, 255)
 
 # left gripper
-PURPLE_LOWER = cv.Scalar(120, 25, 90)
+PURPLE_LOWER = cv.Scalar(125, 15, 140)
 PURPLE_UPPER = cv.Scalar(170, 255, 255)
-BLUE_LOWER = cv.Scalar(96, 45, 120)
-BLUE_UPPER = cv.Scalar(120, 255, 255)
+BLUE_LOWER = cv.Scalar(100, 45, 100)
+BLUE_UPPER = cv.Scalar(125, 255, 255)
 
 # TEMP: since only for one gripper at a time
 #GREEN_LOWER = PURPLE_LOWER
@@ -292,28 +292,55 @@ class ColorSegmenter(object):
             self.color2[side].found = self.color1[side].found = False
 
 
-    def threshRed(self, i):
-        #cv.ShowImage("self.leftImg", self.leftImg)
+    def threshRed(self, msg):
+        SHOW_THRESH_IMAGES = True
+        THRESH_RED_WIDTH_ROI = 200
+        THRESH_RED_HEIGHT_ROI = 100
+
         leftImg = cv.CloneMat(self.leftImg)
         rightImg = cv.CloneMat(self.rightImg)
         width = cv.GetSize(leftImg)[0]
         height = cv.GetSize(leftImg)[1]
-        leftImg = leftImg[0:400, :]
-        rightImg = rightImg[0:400, :]
-        if self.show_images:
+
+        print('width: {0}, height: {1}'.format(width,height))
+
+        lowerBoundPoint = tfx.point(msg.lowerBoundPointStamped)
+        tf_tool_to_cam = tfx.lookupTransform('/left_BC',lowerBoundPoint.frame,wait=10)        
+        convLowerBoundPoint = tf_tool_to_cam * lowerBoundPoint
+        stereoModel = image_geometry.StereoCameraModel()
+        stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
+        (u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(convLowerBoundPoint.list)
+        ROI_left = ((int(u_l-WIDTH_ROI), int(v_l-HEIGHT_ROI)), (int(u_l+WIDTH_ROI), int(v_l+HEIGHT_ROI)))
+        ROI_right= ((int(u_r-WIDTH_ROI), int(v_r-HEIGHT_ROI)), (int(u_r+WIDTH_ROI), int(v_r+HEIGHT_ROI)))
+
+        leftImg_lb_width = int(u_l-THRESH_RED_WIDTH_ROI) if int(u_l-THRESH_RED_WIDTH_ROI) > 0 else 0
+        leftImg_ub_width = int(u_l+THRESH_RED_WIDTH_ROI) if int(u_l+THRESH_RED_WIDTH_ROI) < width else width-1
+        leftImg_lb_height = int(v_l-THRESH_RED_HEIGHT_ROI) if int(v_l-THRESH_RED_HEIGHT_ROI) > 0 else 0
+        leftImg_ub_height = int(v_l+THRESH_RED_HEIGHT_ROI) if int(v_l+THRESH_RED_HEIGHT_ROI) < height else height-1
+        rightImg_lb_width = int(u_r-THRESH_RED_WIDTH_ROI) if int(u_r-THRESH_RED_WIDTH_ROI) > 0 else 0
+        rightImg_ub_width = int(u_r+THRESH_RED_WIDTH_ROI) if int(u_r+THRESH_RED_WIDTH_ROI) < width else width-1
+        rightImg_lb_height = int(v_r-THRESH_RED_HEIGHT_ROI) if int(v_r-THRESH_RED_HEIGHT_ROI) > 0 else 0
+        rightImg_ub_height = int(v_r+THRESH_RED_HEIGHT_ROI) if int(v_r+THRESH_RED_HEIGHT_ROI) < height else height-1
+
+        print('leftImg[{0}:{1},{2}:{3}'.format(leftImg_lb_height,leftImg_ub_height,leftImg_lb_width,leftImg_ub_width))
+        print('rightImg[{0}:{1},{2}:{3}'.format(rightImg_lb_height,rightImg_ub_height,rightImg_lb_width,rightImg_ub_width))
+
+        leftImg = leftImg[leftImg_lb_height:leftImg_ub_height, leftImg_lb_width:leftImg_ub_width]
+        rightImg = rightImg[rightImg_lb_height:rightImg_ub_height, rightImg_lb_width:rightImg_ub_width]
+        if SHOW_THRESH_IMAGES:
             cv.ShowImage("smaller left", leftImg)
             cv.ShowImage("smaller right", rightImg)
         leftThresh = cv.CreateImage(cv.GetSize(leftImg),8,1)
         rightThresh = cv.CreateImage(cv.GetSize(rightImg),8,1)        
         leftThresh = threshold(leftImg, leftImg, leftThresh, RED_LOWER, RED_UPPER)
         rightThresh = threshold(rightImg, rightImg, rightThresh, RED_LOWER, RED_UPPER)
-        if self.show_images:
+        if SHOW_THRESH_IMAGES:
             cv.ShowImage("threshleft", leftThresh)
             cv.ShowImage("threshRight", rightThresh)
         cv.WaitKey(3)
         left_contours = find_contours(leftThresh, "left_thresh")
         right_contours = find_contours(rightThresh, "right_thresh")
-        if len(left_contours) > 0 and len(right_contours)>0:
+        if len(left_contours) > 0 or len(right_contours)>0:
             rospy.loginfo(len(left_contours))
             rospy.loginfo(len(right_contours))
             return ThreshRedResponse(1)
