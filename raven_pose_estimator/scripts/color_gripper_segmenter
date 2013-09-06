@@ -36,7 +36,6 @@ ColorDescription = namedtuple('ColorDescription','name lower upper')
 ROI_size = namedtuple('ROI_size','width height')
 
 
-# adapted and adjusted from Greg Kahn's code (ImageProcessing.py)
 
 ########################################
 #             CONSTANTS                #
@@ -236,7 +235,7 @@ class ColorSegmenter(object):
         
         
         self.locks = dict((side,Lock()) for side in self.sides)
-        self.listener = tf.TransformListener()
+        self.listener = tfx.TransformListener()
         self.bridge = cv_bridge.CvBridge()
         
         self.info = {}
@@ -252,6 +251,9 @@ class ColorSegmenter(object):
         self.t0 = {}
         
         self.prevQuaternion = None
+        
+        self.detected_gripper_pose = None
+        self.estimated_gripper_pose = None
 
         self.quat_pub = rospy.Publisher('tape_orientation_' + self.arm, Quaternion)
         self.pose_pub = rospy.Publisher('tape_pose_' + self.arm, PoseStamped)
@@ -260,6 +262,8 @@ class ColorSegmenter(object):
         self.gripper_ROI_pub = dict((side,rospy.Publisher('%s_ROI_%s' % (self.arm, side), Image)) for side in self.sides) 
         self.color1_pub = dict((side,rospy.Publisher('%s_%s_%s' % (self.arm, self.color1.name, side), Image)) for side in self.sides)
         self.color2_pub = dict((side,rospy.Publisher('%s_%s_%s' % (self.arm, self.color2.name, side), Image)) for side in self.sides)
+        
+        rospy.Subscriber('estimated_gripper_pose_%s' % self.arm, PoseStamped, self._estimatedPoseCallback)
 
         for side in self.sides:
             rospy.Subscriber('%s/camera_info' % self.camera[side], CameraInfo, functools.partial(self._infoCallback,side))
@@ -298,6 +302,22 @@ class ColorSegmenter(object):
             self.handleBoth()
             self.color2[side].found = self.color1[side].found = False
 
+    def _estimatedPoseCallback(self, msg):
+        self.estimated_gripper_pose = tfx.pose(msg)
+
+    def getEstimatedPose(self):
+        if self.estimated_gripper_pose is not None:
+            estimated_gripper_pose = self.estimated_gripper_pose
+        else:
+            pose = tfx.pose([0,0,0], [0,0,0,1], frame=self.tool_frame, stamp=rospy.Time.now())
+            tf_tool_to_cam = tfx.lookupTransform(self.camera_frame,self.tool_frame,wait=10)
+            estimated_gripper_pose = tf_tool_to_cam * pose, TIME_SINCE_DETECTION
+            
+        estimated_time = self.estimated_gripper_pose.stamp.seconds
+        detected_time = self.detected_gripper_pose.stamp.seconds
+        time_since_detection = (estimated_time - detected_time) if estimated_time > detected_time else 0
+        
+        return estimated_gripper_pose, time_since_detection
 
     def threshRed(self, msg):
         SHOW_THRESH_IMAGES = True
@@ -317,8 +337,16 @@ class ColorSegmenter(object):
         stereoModel = image_geometry.StereoCameraModel()
         stereoModel.fromCameraInfo(self.leftInfo, self.rightInfo)
         (u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(convLowerBoundPoint.list)
-        ROI_left = ((int(u_l-WIDTH_ROI), int(v_l-HEIGHT_ROI)), (int(u_l+WIDTH_ROI), int(v_l+HEIGHT_ROI)))
-        ROI_right= ((int(u_r-WIDTH_ROI), int(v_r-HEIGHT_ROI)), (int(u_r+WIDTH_ROI), int(v_r+HEIGHT_ROI)))
+        
+        def expandROIRegion(start_ROI, elapsed_time, max_elapsed_time=20., growth_factor=2.):
+            if elasped_time > max_elapsed_time:
+                return start_ROI * growth_factor
+            
+            return int(start_ROI * (elapsed_time/max_elapsed_time) * growth_factor)
+        
+        estimated_gripper_pose, time_since_detection = self.getEstimatedPose()
+        THRESH_WIDTH_ROI = expandROIRegion(THRESH_WIDTH_ROI, time_since_detection)
+        THRESH_HEIGHT_ROI = expandROIRegion(THRESH_HEIGHT_ROI, time_since_detection)
 
         leftImg_lb_width = int(u_l-THRESH_RED_WIDTH_ROI) if int(u_l-THRESH_RED_WIDTH_ROI) > 0 else 0
         leftImg_ub_width = int(u_l+THRESH_RED_WIDTH_ROI) if int(u_l+THRESH_RED_WIDTH_ROI) < width else width-1
@@ -352,7 +380,6 @@ class ColorSegmenter(object):
             rospy.loginfo(len(right_contours))
             return ThreshRedResponse(1)
         return ThreshRedResponse(0)
-
 
     def process(self, image, side):
         """
@@ -460,13 +487,9 @@ class ColorSegmenter(object):
                     else:
                         q = currQuat
                         self.prevQuaternion = q
-                pose = PoseStamped()
-                pose.pose.position = p
-                pose.pose.orientation = q
-                pose.header.frame_id = self.camera_frame
-                pose.header.stamp = rospy.Time.now()
+                self.detected_gripper_pose = tfx.pose(p,q,frame=self.camera_frame,stamp='now')
                 self.quat_pub.publish(q)
-                self.pose_pub.publish(pose)
+                self.pose_pub.publish(self.detected_gripper_pose.msg.PoseStamped())
                 t_left = time.clock() - self.t0['left']
                 t_right = time.clock() - self.t0['right']
                 if self.show_time:
@@ -504,9 +527,7 @@ class ColorSegmenter(object):
         ROI_width = self.gripper_ROI_size.width
         ROI_height = self.gripper_ROI_size.height
         
-        pose = tfx.pose([0,0,0], [0,0,0,1], frame=self.tool_frame, stamp=rospy.Time.now())
-        tf_tool_to_cam = tfx.lookupTransform(self.camera_frame,self.tool_frame,wait=10)
-        pose = tf_tool_to_cam * pose
+        pose, timeSinceDetection = self.getEstimatedPose()
         stereoModel = image_geometry.StereoCameraModel()
         stereoModel.fromCameraInfo(self.info['left'], self.info['right'])
         (u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(pose.position.list)
