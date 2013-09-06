@@ -30,6 +30,9 @@ import tfx
 import IPython
 
 from collections import namedtuple
+
+ColorDescription = namedtuple('ColorDescription','name lower upper')
+
 ROI_size = namedtuple('ROI_size','width height')
 
 
@@ -40,16 +43,16 @@ ROI_size = namedtuple('ROI_size','width height')
 ########################################
 
 # right gripper
-GREEN_LOWER = cv.Scalar(38, 35, 50) #THESE ARE THE GREEN PAPER VALUES
-GREEN_UPPER = cv.Scalar(99, 255, 255)
-ORANGE_LOWER = cv.Scalar(5, 30, 200) # THESE ARE THE ORANGE PAPER VALUES
-ORANGE_UPPER = cv.Scalar(35, 255, 255)
+GREEN_LOWER = (38, 35, 50) #THESE ARE THE GREEN PAPER VALUES
+GREEN_UPPER = (99, 255, 255)
+ORANGE_LOWER = (5, 30, 200) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_UPPER = (35, 255, 255)
 
 # left gripper
-PURPLE_LOWER = cv.Scalar(125, 15, 140)
-PURPLE_UPPER = cv.Scalar(170, 255, 255)
-BLUE_LOWER = cv.Scalar(100, 45, 100)
-BLUE_UPPER = cv.Scalar(125, 255, 255)
+PURPLE_LOWER = (125, 15, 140)
+PURPLE_UPPER = (170, 255, 255)
+BLUE_LOWER = (100, 45, 100)
+BLUE_UPPER = (125, 255, 255)
 
 # TEMP: since only for one gripper at a time
 #GREEN_LOWER = PURPLE_LOWER
@@ -57,10 +60,12 @@ BLUE_UPPER = cv.Scalar(125, 255, 255)
 #ORANGE_LOWER = BLUE_LOWER
 #ORANGE_UPPER = BLUE_UPPER
 
-RED_LOWER = cv.Scalar(0, 100, 30) # VALUES FOR THE RED FOAM
-RED_UPPER = cv.Scalar(3, 255, 255)
-
 DEFAULT_ROI_SIZE = ROI_size(600,600)
+
+RED_LOWER = (0, 100, 30) # VALUES FOR THE RED FOAM
+RED_UPPER = (3, 255, 255)
+
+DEFAULT_RED_ROI_SIZE = ROI_size(200,100)
 
 SLERP = True
 DYNAMIC_SLERP = False
@@ -198,10 +203,10 @@ class ColorSidePoints(object):
         self.lower = None
 
 class ColorPoints(object):
-    def __init__(self, name, hsv_upper, hsv_lower):
+    def __init__(self, name, hsv_lower, hsv_upper):
         self.name = name
-        self.hsv_upper = hsv_upper
-        self.hsv_lower = hsv_lower
+        self.hsv_lower = cv.Scalar(*hsv_lower)
+        self.hsv_upper = cv.Scalar(*hsv_upper)
         self.left = ColorSidePoints()
         self.right = ColorSidePoints()
     
@@ -240,6 +245,8 @@ class ColorSegmenter(object):
         self.gripper_ROI_size = ROI_size(*gripper_ROI_wh)
         self.gripper_ROI = {}
         
+        self.red = kwargs['red']
+        self.red_ROI_size = kwargs['red_ROI_size']
         self.red_ROI = {}
         
         self.t0 = {}
@@ -579,33 +586,112 @@ class ColorSegmenter(object):
 
 def main():
     rospy.init_node('color_segmenter',anonymous=True)
-    rospy.sleep(5)
     
     parser = argparse.ArgumentParser()
     
     parser.add_argument('arm',nargs='?')
+    parser.add_argument('--camera-name')
     parser.add_argument('--show-images','-i',action='store_true',default=False)
     parser.add_argument('--print-messages',action='store_true',default=False)
     parser.add_argument('--show-time',action='store_true',default=False)
+    
+    parser.add_argument('--roi',nargs=2,type=int, dest='ROI_size', metavar=('width','height'))
+    
+    color1_group = parser.add_argument_group('color1','color1 options')
+    color1_group.add_argument('--color1-name')
+    color1_group.add_argument('--color1-hsv',nargs=6,type=int,metavar=('lower_h','lower_s','lower_v','upper_h','upper_s','upper_v'))
+    color1_group.add_argument('--color1-lower',nargs=3,type=int,metavar=('h','s','v'))
+    color1_group.add_argument('--color1-upper',nargs=3,type=int,metavar=('h','s','v'))
+    
+    
+    color2_group = parser.add_argument_group('color2','color2 options')
+    color2_group.add_argument('--color2-name')
+    color2_group.add_argument('--color2-hsv',nargs=6,type=int,metavar=('lower_h','lower_s','lower_v','upper_h','upper_s','upper_v'))
+    color2_group.add_argument('--color2-lower',nargs=3,type=int,metavar=('h','s','v'))
+    color2_group.add_argument('--color2-upper',nargs=3,type=int,metavar=('h','s','v'))
+    
+    red_group = parser.add_argument_group('red','red options')
+    red_group.add_argument('--red-roi',nargs=2,type=int,dest='red_ROI_size',metavar=('width','height'))
+    red_group.add_argument('--red-hsv',nargs=6,type=int,metavar=('lower_h','lower_s','lower_v','upper_h','upper_s','upper_v'))
+    red_group.add_argument('--red-lower',nargs=3,type=int,metavar=('h','s','v'))
+    red_group.add_argument('--red-upper',nargs=3,type=int,metavar=('h','s','v'))
     
     args = parser.parse_args(rospy.myargv()[1:])
 
     arm = args.arm or rospy.get_param('~arm','R')
     del args.arm
+    
+    camera_name = args.camera_name or '/BC'
+    del args.camera_name    
 
     if arm == 'R':
-        color1 = ('orange',ORANGE_LOWER,ORANGE_UPPER)
-        color2 = ('green',GREEN_LOWER,GREEN_UPPER)
+        color1_name = 'orange'
+        color1_lower = ORANGE_LOWER
+        color1_upper = ORANGE_UPPER
+        color2_name = 'green'
+        color2_lower = GREEN_LOWER
+        color2_upper = GREEN_UPPER
     else:
-        color2 = ('purple',PURPLE_LOWER,PURPLE_UPPER)
-        color1 = ('blue',BLUE_LOWER,BLUE_UPPER)
-                        
-
+        color1_name = 'blue'
+        color1_lower = BLUE_LOWER
+        color1_upper = BLUE_UPPER
+        color2_name = 'purple'
+        color2_lower = PURPLE_LOWER
+        color2_upper = PURPLE_UPPER
     
-    camera_name = 'BC'
+    color1_name = args.color1_name or color1_name
+    color2_name = args.color2_name or color2_name
+    
+    if args.color1_hsv:
+        color1_lower = args.color1_hsv[0:3]
+        color1_upper = args.color1_hsv[3:6]
+    else:
+        if args.color1_lower:
+            color1_lower = args.color1_lower
+        if args.color1_upper:
+            color1_upper = args.color1_upper
+    
+    if args.color2_hsv:
+        color2_lower = args.color2_hsv[0:3]
+        color2_upper = args.color2_hsv[3:6]
+    else:
+        if args.color2_lower:
+            color2_lower = args.color2_lower
+        if args.color2_upper:
+            color2_upper = args.color2_upper
+    
+    color1 = ColorDescription(color1_name,color1_lower,color1_upper)
+    color2 = ColorDescription(color2_name,color2_lower,color2_upper)
 
-    gs = ColorSegmenter(arm, camera_name, DEFAULT_ROI_SIZE,
-                        color1=color1, color2=color2, **vars(args))
+    red_lower = RED_LOWER
+    red_upper = RED_UPPER
+    if args.red_hsv:
+        red_lower = args.red_hsv[0:3]
+        red_upper = args.red_hsv[3:6]
+    else:
+        if args.red_lower:
+            red_lower = args.red_lower
+        if args.red_upper:
+            red_upper = args.red_upper
+
+    if args.ROI_size:
+        ROI = ROI_size(*args.ROI_size)
+    else:
+        ROI = DEFAULT_ROI_SIZE
+    del args.ROI_size
+    
+    red_ROI_size = ROI_size(*args.red_ROI_size) if args.red_ROI_size else DEFAULT_RED_ROI_SIZE
+    
+    for name in dir(args):
+        if name.startswith('color') or name.startswith('red'):
+            delattr(args,name)
+    
+    kwargs = vars(args).copy()
+    kwargs['red'] = ColorDescription('red',red_lower,red_upper)
+    kwargs['red_ROI_size'] = red_ROI_size
+    
+    gs = ColorSegmenter(arm, camera_name, ROI,
+                        color1=color1, color2=color2, **kwargs)
 
     """
     gs = ColorSegmenter('R', left_camera, right_camera,
