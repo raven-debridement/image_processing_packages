@@ -42,7 +42,7 @@ ROI_size = namedtuple('ROI_size','width height')
 ########################################
 
 # right gripper
-GREEN_LOWER = (38, 35, 50) #THESE ARE THE GREEN PAPER VALUES
+GREEN_LOWER = (38, 45, 50) #THESE ARE THE GREEN PAPER VALUES
 GREEN_UPPER = (99, 255, 255)
 ORANGE_LOWER = (5, 30, 200) # THESE ARE THE ORANGE PAPER VALUES
 ORANGE_UPPER = (35, 255, 255)
@@ -59,7 +59,7 @@ BLUE_UPPER = (125, 255, 255)
 #ORANGE_LOWER = BLUE_LOWER
 #ORANGE_UPPER = BLUE_UPPER
 
-DEFAULT_ROI_SIZE = ROI_size(600,600)
+DEFAULT_ROI_SIZE = ROI_size(300,300)
 
 RED_LOWER = (0, 100, 30) # VALUES FOR THE RED FOAM
 RED_UPPER = (3, 255, 255)
@@ -224,6 +224,7 @@ class ColorSegmenter(object):
         self.camera = dict((side, '%s/%s' % (camera_name,side)) for side in self.sides)
         
         self.show_images = kwargs.get('show_images')
+        self.show_thresh_red_images = kwargs.get('show_thresh_red_images')
         self.print_messages = kwargs.get('print_messages')
         self.show_time = kwargs.get('show_time')
         
@@ -305,33 +306,32 @@ class ColorSegmenter(object):
             cv.WaitKey(3)
             self.handleBoth()
             self.color2[side].found = self.color1[side].found = False
-
+            
+            self.threshRed()
+            
     def _estimatedPoseCallback(self, msg):
         pose = tfx.pose(msg)
-        tf_poseframe_to_cam = tfx.lookupTransform(self.camera_frame,pose.frame)
-        self.estimated_gripper_pose = tf_poseframe_to_cam * pose
-        self.threshRed()
+        if self.camera_frame is not None:
+            tf_poseframe_to_cam = tfx.lookupTransform(self.camera_frame,pose.frame)
+            self.estimated_gripper_pose = tf_poseframe_to_cam * pose
 
     def getEstimatedPose(self):
         if self.estimated_gripper_pose is not None:
             estimated_gripper_pose = self.estimated_gripper_pose
+            estimated_time = estimated_gripper_pose.stamp.seconds
         else:
             pose = tfx.pose([0,0,0], [0,0,0,1], frame=self.tool_frame)#, stamp=rospy.Time.now())
             tf_tool_to_cam = tfx.lookupTransform(self.camera_frame,self.tool_frame)
             estimated_gripper_pose = tf_tool_to_cam * pose
+            estimated_time = rospy.Time.now().secs
             
-        if self.arm == 'R':
-            print 'estimated pose'
-            print estimated_gripper_pose
-            
-        estimated_time = estimated_gripper_pose.stamp.seconds
+        #estimated_time = estimated_gripper_pose.stamp.seconds
         detected_time = self.detected_gripper_pose.stamp.seconds if self.detected_gripper_pose is not None else float("inf")
-        time_since_detection = (estimated_time - detected_time) if estimated_time > detected_time else 0
+        time_since_detection = (estimated_time - detected_time) if estimated_time > detected_time else 0.0
         
         return estimated_gripper_pose, time_since_detection
 
     def threshRed(self):
-        SHOW_THRESH_IMAGES = True
         THRESH_RED_WIDTH_ROI = 200
         THRESH_RED_HEIGHT_ROI = 100
         
@@ -342,9 +342,6 @@ class ColorSegmenter(object):
         rightImg = cv.CloneMat(self.img['right'])
         width = cv.GetSize(leftImg)[0]
         height = cv.GetSize(leftImg)[1]
-
-        if self.arm == 'R':
-            print('width: {0}, height: {1}'.format(width,height))
         
         estimated_gripper_pose, time_since_detection = self.getEstimatedPose()
 
@@ -356,10 +353,9 @@ class ColorSegmenter(object):
         (u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(gripper_pos.list)
         
         def expandROIRegion(start_ROI, elapsed_time, max_elapsed_time=20., growth_factor=2.):
-            if elapsed_time > max_elapsed_time:
-                return start_ROI * growth_factor
+            elapsed_time = min(elapsed_time,max_elapsed_time)
             
-            return int(start_ROI * (elapsed_time/max_elapsed_time) * growth_factor)
+            return int(start_ROI + start_ROI * (elapsed_time/max_elapsed_time) * growth_factor)
         
         THRESH_RED_WIDTH_ROI = expandROIRegion(THRESH_RED_WIDTH_ROI, time_since_detection)
         THRESH_RED_HEIGHT_ROI = expandROIRegion(THRESH_RED_HEIGHT_ROI, time_since_detection)
@@ -373,34 +369,34 @@ class ColorSegmenter(object):
         rightImg_lb_height = int(v_r-THRESH_RED_HEIGHT_ROI) if int(v_r-THRESH_RED_HEIGHT_ROI) > 0 else 0
         rightImg_ub_height = int(v_r+THRESH_RED_HEIGHT_ROI) if int(v_r+THRESH_RED_HEIGHT_ROI) < height else height-1
 
-        if self.arm == 'R':
-            print('leftImg[{0}:{1},{2}:{3}'.format(leftImg_lb_height,leftImg_ub_height,leftImg_lb_width,leftImg_ub_width))
-            print('rightImg[{0}:{1},{2}:{3}'.format(rightImg_lb_height,rightImg_ub_height,rightImg_lb_width,rightImg_ub_width))
+        if self.print_messages:
+            print('(height, width) = ({0}, {1})'.format(height,width))
+            print('time_since_detection: {0}'.format(time_since_detection))
+            print('leftImg[{0}:{1},{2}:{3}]'.format(leftImg_lb_height,leftImg_ub_height,leftImg_lb_width,leftImg_ub_width))
+            print('rightImg[{0}:{1},{2}:{3}]'.format(rightImg_lb_height,rightImg_ub_height,rightImg_lb_width,rightImg_ub_width))
         
-        if leftImg_lb_width <= leftImg_ub_width or leftImg_lb_height <= leftImg_ub_height or rightImg_lb_width <= rightImg_ub_width or rightImg_lb_height <= rightImg_ub_height:
+        if leftImg_lb_width >= leftImg_ub_width or leftImg_lb_height >= leftImg_ub_height or rightImg_lb_width >= rightImg_ub_width or rightImg_lb_height >= rightImg_ub_height:
             return
 
         leftImg = leftImg[leftImg_lb_height:leftImg_ub_height, leftImg_lb_width:leftImg_ub_width]
         rightImg = rightImg[rightImg_lb_height:rightImg_ub_height, rightImg_lb_width:rightImg_ub_width]
-        if SHOW_THRESH_IMAGES:
-            cv.ShowImage("smaller left", leftImg)
-            cv.ShowImage("smaller right", rightImg)
+        if self.show_thresh_red_images:
+            cv.ShowImage("smaller left %s"%self.arm, leftImg)
+            cv.ShowImage("smaller right %s"%self.arm, rightImg)
         leftThresh = cv.CreateImage(cv.GetSize(leftImg),8,1)
         rightThresh = cv.CreateImage(cv.GetSize(rightImg),8,1)        
         leftThresh = threshold(leftImg, leftImg, leftThresh, RED_LOWER, RED_UPPER)
         rightThresh = threshold(rightImg, rightImg, rightThresh, RED_LOWER, RED_UPPER)
-        if SHOW_THRESH_IMAGES:
-            cv.ShowImage("threshleft", leftThresh)
-            cv.ShowImage("threshRight", rightThresh)
+        if self.show_thresh_red_images:
+            cv.ShowImage("threshleft%s"%self.arm, leftThresh)
+            cv.ShowImage("threshRight%s"%self.arm, rightThresh)
         cv.WaitKey(3)
         left_contours = find_contours(leftThresh, "left_thresh")
         right_contours = find_contours(rightThresh, "right_thresh")
         if len(left_contours) > 0 or len(right_contours)>0:
-            rospy.loginfo(len(left_contours))
-            rospy.loginfo(len(right_contours))
-            self.red_thres_publish(Bool(True))
-        
-        self.red_thresh_pub.publish(Bool(False))
+            self.red_thresh_pub.publish(Bool(True))
+        else:
+            self.red_thresh_pub.publish(Bool(False))
 
     def process(self, image, side):
         """
@@ -415,8 +411,13 @@ class ColorSegmenter(object):
         
         ROI, pixel = self.determineROI(side)
         
-        ROI_height = self.gripper_ROI_size.height
-        ROI_width = self.gripper_ROI_size.width
+        estimated_gripper_pose, time_since_detection = self.getEstimatedPose()
+        
+        def expandROIRegion(start_ROI, elapsed_time, pixel_per_sec=0.1):
+            return int(start_ROI + start_ROI * (elapsed_time * pixel_per_sec))
+        
+        ROI_height = expandROIRegion(self.gripper_ROI_size.height, time_since_detection)
+        ROI_width = expandROIRegion(self.gripper_ROI_size.width, time_since_detection)
         
         lower_height_bound = int(pixel[1]) - ROI_height
         lower_width_bound = int(pixel[0]) - ROI_width
@@ -428,8 +429,16 @@ class ColorSegmenter(object):
         upper_height_bound = upper_height_bound if upper_height_bound < height else height - 1
         upper_width_bound = upper_width_bound if upper_width_bound < width else width - 1
         
-        if self.arm == 'R':
-            print('(height, width): ({0}, {1})'.format(height,width))
+        
+        if lower_height_bound >= upper_height_bound:
+             lower_height_bound = 0
+             upper_height_bound = height
+        if lower_width_bound >= upper_width_bound:
+            lower_width_bound = 0
+            upper_width_bound = width
+        
+        
+        if self.print_messages:
             print('Pixel (height, width): ({0},{1})'.format(pixel[1],pixel[0]))
             print('Process image bounds: [{0} : {1} , {2} : {3}]'.format(lower_height_bound,upper_height_bound,
                                                                     lower_width_bound, upper_width_bound))
@@ -449,10 +458,10 @@ class ColorSegmenter(object):
         color1_contours = find_contours(color1ContourImg, self.color1.name) #FIXME remove later
         self.color2[side].lower, self.color2[side].upper, self.color2[side].found = find_endpoints(color2_contours)
         self.color1[side].lower, self.color1[side].upper, self.color1[side].found = find_endpoints(color1_contours)
-        #self.color2[side].lower = self.addOffset(self.color2[side].lower, widthOffset, heightOffset)
-        #self.color2[side].upper = self.addOffset(self.color2[side].upper, widthOffset, heightOffset)
-        #self.color1[side].lower = self.addOffset(self.color1[side].lower, widthOffset, heightOffset)
-        #self.color1[side].upper = self.addOffset(self.color1[side].upper, widthOffset, heightOffset)
+        self.color2[side].lower = self.addOffset(self.color2[side].lower, lower_width_bound, lower_height_bound)
+        self.color2[side].upper = self.addOffset(self.color2[side].upper, lower_width_bound, lower_height_bound)
+        self.color1[side].lower = self.addOffset(self.color1[side].lower, lower_width_bound, lower_height_bound)
+        self.color1[side].upper = self.addOffset(self.color1[side].upper, lower_width_bound, lower_height_bound)
         return color2ThreshImg, color1ThreshImg, color2ContourImg, color1ContourImg
 
 
@@ -470,12 +479,6 @@ class ColorSegmenter(object):
                 print "left_%s:\t\t%s" % (self.color2.name,self.color2.left.found)
                 print "right_%s:\t\t%s" % (self.color2.name,self.color2.right.found)
             if found:
-                if self.arm == 'R':
-                    print 'color points'
-                    print self.color2.left.lower[0], self.color2.left.lower[1]
-                    print self.color2.left.upper[0], self.color2.left.upper[1]
-                    print self.color1.left.lower[0], self.color1.left.lower[1]
-                    print self.color1.left.upper[0], self.color1.left.upper[1]
                     
                 
                 color2_lower_pt = self.convertStereo(self.color2.left.lower[0], self.color2.left.lower[1], math.fabs(self.color2.left.lower[0] - self.color2.right.lower[0]))
@@ -532,12 +535,6 @@ class ColorSegmenter(object):
                 self.detected_gripper_pose = tfx.pose(p,q,frame=self.camera_frame,stamp='now')
                 self.quat_pub.publish(q)
                 self.pose_pub.publish(self.detected_gripper_pose.msg.PoseStamped())
-                if self.arm == 'R':
-                    print 'detected gripper pose %s' % self.arm
-                    print self.detected_gripper_pose
-                    
-                    print 'point'
-                    print p
                 t_left = time.clock() - self.t0['left']
                 t_right = time.clock() - self.t0['right']
                 if self.show_time:
@@ -661,6 +658,7 @@ def main():
     parser.add_argument('arm',nargs='?')
     parser.add_argument('--camera-name')
     parser.add_argument('--show-images','-i',action='store_true',default=False)
+    parser.add_argument('--show-thresh-red-images',action='store_true',default=False)
     parser.add_argument('--print-messages',action='store_true',default=False)
     parser.add_argument('--show-time',action='store_true',default=False)
     
