@@ -15,6 +15,7 @@ import math
 from std_msgs.msg import String, Bool
 from sensor_msgs.msg import Image, CameraInfo
 import cv_bridge
+from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point, PointStamped, Quaternion, PoseStamped, Polygon, PolygonStamped, Point32
 import tf
 import image_geometry
@@ -214,6 +215,33 @@ class ColorPoints(object):
     
     def __getitem__(self, name):
         return getattr(self, name)
+    
+#########################
+# PUBLISHING METHODS    #
+#########################
+
+def createMarker(pose, color="red", id=None, lifetime=None):
+    id = id or 0
+    lifetime = lifetime or 2
+    marker = Marker()
+    marker.id = id
+    marker.header.frame_id = pose.header.frame_id
+    marker.type = marker.CUBE
+    marker.action = marker.ADD
+    marker.scale.x = 0.002
+    marker.scale.y = 0.002
+    marker.scale.z = 0.002
+    marker.color.a = 1.0
+    if color == "red":
+        marker.color.r = 255
+        marker.color.b = 0
+    else:
+        marker.color.r = 0
+        marker.color.b = 255
+    marker.color.g = 0
+    marker.pose = pose.pose
+    marker.lifetime = rospy.Duration(lifetime)
+    return marker
 
 ##################
 #   MAIN CLASS   #
@@ -288,6 +316,12 @@ class ColorSegmenter(object):
         rospy.Subscriber('/camera/rgb/image_rect_color', Image, self._psRgbCallback)
         rospy.Subscriber('/camera/depth_registered/image_rect', Image, self._psDepthCallback)
         rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self._rgbInfoCallback)
+        
+        self.red_roi_pub = rospy.Publisher('red_roi_%s'%self.arm, Image)
+        self.red_thresh_roi_pub = rospy.Publisher('red_thresh_roi_%s'%self.arm, Image)
+        self.red_depth_thresh_roi_pub = rospy.Publisher('red_depth_thresh_roi_%s'%self.arm, Image)
+        
+        self.red_thresh_marker_pub = rospy.Publisher("found_red_marker_%s"%self.arm, Marker)
     
     ################################
     #   SUBSCRIBER BOUND METHODS   #
@@ -320,7 +354,7 @@ class ColorSegmenter(object):
                 cv.ShowImage("%s arm %s camera %s" % (self.arm, side, self.color2.name), color2)
                 cv.ShowImage("%s arm %s camera %s" % (self.arm, side, self.color1.name), color1)
             cv.WaitKey(3)
-            self.handleBoth()
+            self.handleBoth(image.header.stamp)
             self.color2[side].found = self.color1[side].found = False
             
             
@@ -422,7 +456,9 @@ class ColorSegmenter(object):
 
         img = img[lb_height:ub_height, lb_width:ub_width]
         if self.show_thresh_red_images:
-            cv.ShowImage("smaller %s"%self.arm, img)
+            self.red_roi_pub.publish(self.bridge.cv_to_imgmsg(img))
+            #cv.ShowImage("smaller %s"%self.arm, img)
+            #cv.WaitKey(3)
         thresh0 = cv.CreateImage(cv.GetSize(img),8,1)  
         hsvImg0 = cv.CreateImage(cv.GetSize(img),8,3)
         hsvImg1 = cv.CreateImage(cv.GetSize(img),8,3)  
@@ -431,31 +467,58 @@ class ColorSegmenter(object):
         thresh1 = threshold(img, hsvImg1, thresh1, RED_LOWER1, RED_UPPER1, erode_and_dilate=False)
         cv.Or(thresh0, thresh1, thresh0)
         
+        if self.show_thresh_red_images:
+            self.red_thresh_roi_pub.publish(self.bridge.cv_to_imgmsg(thresh0))
+            #cv.ShowImage("thresh red only %s"%self.arm, thresh0)
+            #cv.WaitKey(3)
         
-        
+        all_zs = []
+        zs = []
         gripper_z = gripper_pos.z
-        z_bound = .015
+        z_bound = .02
         for width in xrange(ub_width - lb_width):
             for height in xrange(ub_height - lb_height):
                 if thresh0[height,width] != 0.0:
                     depth = self.depthImage[lb_height+height, lb_width+width]
-                    if np.isnan(depth) or math.fabs(gripper_z - depth) > z_bound:
-                        thresh0[height,width] = 0.0
-                
+                    if not np.isnan(depth):
+                        all_zs.append(depth)
+                        if math.fabs(gripper_z - depth) > z_bound:
+                            #print 'setting to 0'
+                            thresh0[height,width] = 0.0
+                    #if np.isnan(depth) or math.fabs(gripper_z - depth) > z_bound:
+                    #    thresh0[height,width] = 0.0
+                    else:
+                        zs.append(depth)
+        
+        avgz = sum(zs) / len(zs) if len(zs) > 0 else -1
+        avg_allz = sum(all_zs) / len(all_zs) if len(all_zs) > 0 else -1
+        
+        #print 'Gripper_z = {0}'.format(gripper_z)
+        #print 'Average_z = {0}'.format(avgz)
+        #print 'Avg_all_z = {0}\n'.format(avg_allz)
         
         if self.show_thresh_red_images:
-            cv.ShowImage("thresh %s"%self.arm, thresh0)
-        cv.WaitKey(3)
+            self.red_depth_thresh_roi_pub.publish(self.bridge.cv_to_imgmsg(thresh0))
+            #cv.ShowImage("thresh red and depth %s"%self.arm, thresh0)
+            #cv.WaitKey(3)
         contours = find_contours(thresh0, "thresh")
+        foundRed = True
         if len(contours) > 0:
             self.lastFoundRed = rospy.Time.now()
-            self.red_thresh_pub.publish(Bool(True))
+            foundRed = True
         else:
             if self.lastFoundRed is not None and rospy.Time.now() - self.lastFoundRed < self.redHistoryDuration:
-                self.red_thresh_pub.publish(Bool(True))
+                foundRed = True
             else:
-                self.red_thresh_pub.publish(Bool(False))
+                foundRed = False
 
+        toolPose = tfx.pose([0,0,0],frame=self.tool_frame,stamp=rospy.Time.now()).msg.PoseStamped()
+        if foundRed:
+            self.red_thresh_marker_pub.publish(createMarker(toolPose,color="red"))
+        else:
+            self.red_thresh_marker_pub.publish(createMarker(toolPose,color="blue"))
+        
+        self.red_thresh_pub.publish(Bool(foundRed))
 
 
     def process(self, image, side):
@@ -527,11 +590,13 @@ class ColorSegmenter(object):
         return color2ThreshImg, color1ThreshImg, color2ContourImg, color1ContourImg
 
 
-    def handleBoth(self):
+    def handleBoth(self, image_time=None):
         """ 
         Returns the quaternion and position of the pieces of tape (which should correspond to the 
         orientation and position of the gripper 
         """
+        image_time = image_time or rospy.Time.now()
+        
         try:
             found = self.color1.left.found and self.color2.left.found and self.color1.right.found and self.color2.right.found
             if self.print_messages:
@@ -602,7 +667,7 @@ class ColorSegmenter(object):
                     else:
                         q = currQuat
                         self.prevQuaternion = q
-                self.detected_gripper_pose = tfx.pose(p,q,frame=self.camera_frame,stamp=rospy.Time.now())
+                self.detected_gripper_pose = tfx.pose(p,q,frame=self.camera_frame,stamp=image_time)
                 self.quat_pub.publish(q)
                 self.pose_pub.publish(self.detected_gripper_pose.msg.PoseStamped())
                 t_left = time.clock() - self.t0['left']
