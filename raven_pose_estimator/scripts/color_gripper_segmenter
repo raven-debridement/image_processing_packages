@@ -62,10 +62,8 @@ BLUE_UPPER = (125, 255, 255)
 
 DEFAULT_ROI_SIZE = ROI_size(300,300)
 
-RED_LOWER0 = (175, 100, 30)
-RED_UPPER0 = (179, 255, 255)
-RED_LOWER1 = (0, 100, 30) # VALUES FOR THE RED FOAM
-RED_UPPER1 = (3, 255, 255)
+RED_LOWER = (0, 100, 30) # VALUES FOR THE RED FOAM
+RED_UPPER = (3, 255, 255)
 
 DEFAULT_RED_ROI_SIZE = ROI_size(200,100)
 
@@ -276,7 +274,7 @@ class ColorSegmenter(object):
         self.gripper_ROI_size = ROI_size(*gripper_ROI_wh)
         self.gripper_ROI = {}
         
-        #self.red = kwargs['red']
+        self.red = kwargs['red']
         self.red_ROI_size = kwargs['red_ROI_size']
         self.red_ROI = {}
         
@@ -304,22 +302,13 @@ class ColorSegmenter(object):
             rospy.Subscriber('%s/image_rect_color' % self.camera[side], Image, functools.partial(self._imageCallback,side))
         
         self.red_thresh_pub = rospy.Publisher('found_red_%s'%self.arm, Bool)
-        #self.red_service = rospy.Service('thresh_red_' + self.arm, ThreshRed, self.threshRed)
         
-        self.psLock = Lock()
-        self.rgbInfo = None
-        self.rgbImage = None
-        self.depthImage = None
         self.lastFoundRed = None
         self.redHistoryDuration = rospy.Duration(1)
         
-        rospy.Subscriber('/camera/rgb/image_rect_color', Image, self._psRgbCallback)
-        rospy.Subscriber('/camera/depth_registered/image_rect', Image, self._psDepthCallback)
-        rospy.Subscriber('/camera/rgb/camera_info', CameraInfo, self._rgbInfoCallback)
         
         self.red_roi_pub = rospy.Publisher('red_roi_%s'%self.arm, Image)
         self.red_thresh_roi_pub = rospy.Publisher('red_thresh_roi_%s'%self.arm, Image)
-        self.red_depth_thresh_roi_pub = rospy.Publisher('red_depth_thresh_roi_%s'%self.arm, Image)
         
         self.red_thresh_marker_pub = rospy.Publisher("found_red_marker_%s"%self.arm, Marker)
     
@@ -357,6 +346,7 @@ class ColorSegmenter(object):
             self.handleBoth(image.header.stamp)
             self.color2[side].found = self.color1[side].found = False
             
+            self.threshRed()
             
     def _estimatedPoseCallback(self, msg):
         pose = tfx.pose(msg)
@@ -394,116 +384,70 @@ class ColorSegmenter(object):
         self.estimated_gripper_pose = None
         return estimated_gripper_pose, time_since_detection
 
-    def _psRgbCallback(self, msg):
-        with self.psLock:
-            self.rgbImage = self.bridge.imgmsg_to_cv(msg, "bgr8")
-            if self.depthImage is not None and self.rgbInfo is not None:
-                self.threshRed()
-
-    def _psDepthCallback(self, msg):
-        self.depthImage = self.bridge.imgmsg_to_cv(msg, desired_encoding="passthrough")
-        
-    def _rgbInfoCallback(self, msg):
-        self.rgbInfo = msg
-        
     def threshRed(self):
-        THRESH_RED_WIDTH_ROI = 50
-        THRESH_RED_HEIGHT_ROI = 50
+        THRESH_RED_WIDTH_ROI = 200
+        THRESH_RED_HEIGHT_ROI = 100
+        
+        if not self.img.has_key('left') or not self.img.has_key('right'):
+            return
 
-        origImg = img = self.rgbImage
-        width = cv.GetSize(img)[0]
-        height = cv.GetSize(img)[1]
+        leftImg = cv.CloneMat(self.img['left'])
+        rightImg = cv.CloneMat(self.img['right'])
+        width = cv.GetSize(leftImg)[0]
+        height = cv.GetSize(leftImg)[1]
         
         estimated_gripper_pose, time_since_detection = self.getEstimatedPose()
 
         gripper_pos = tfx.pose(estimated_gripper_pose).position
-        tf_tool_to_cam = tfx.lookupTransform('/camera_rgb_optical_frame',gripper_pos.frame,wait=10)        
+        tf_tool_to_cam = tfx.lookupTransform('/left_BC',gripper_pos.frame,wait=10)        
         gripper_pos = tf_tool_to_cam * gripper_pos
-        
-        g_vec = np.array(gripper_pos.list)
-        #print 'g_vec'
-        #print g_vec
-        K = np.array(self.rgbInfo.K)
-        #print 'K'
-        K = K.reshape(3,3)
-        #print K
-        p = np.dot(K, g_vec)
-        u = p[0] / p[2]
-        v = p[1] / p[2]
-        
+        stereoModel = image_geometry.StereoCameraModel()
+        stereoModel.fromCameraInfo(self.info['left'], self.info['right'])
+        (u_l, v_l), (u_r, v_r) = stereoModel.project3dToPixel(gripper_pos.list)
         
         def expandROIRegion(start_ROI, elapsed_time, max_elapsed_time=20., growth_factor=2.):
             elapsed_time = min(elapsed_time,max_elapsed_time)
             
             return int(start_ROI + start_ROI * (elapsed_time/max_elapsed_time) * growth_factor)
         
-        THRESH_RED_WIDTH_ROI = expandROIRegion(THRESH_RED_WIDTH_ROI, time_since_detection)
-        THRESH_RED_HEIGHT_ROI = expandROIRegion(THRESH_RED_HEIGHT_ROI, time_since_detection)
+        #THRESH_RED_WIDTH_ROI = expandROIRegion(THRESH_RED_WIDTH_ROI, time_since_detection)
+        #THRESH_RED_HEIGHT_ROI = expandROIRegion(THRESH_RED_HEIGHT_ROI, time_since_detection)
 
-        lb_width = int(u-THRESH_RED_WIDTH_ROI) if int(u-THRESH_RED_WIDTH_ROI) > 0 else 0
-        ub_width = int(u+THRESH_RED_WIDTH_ROI) if int(u+THRESH_RED_WIDTH_ROI) < width else width-1
-        lb_height = int(v-THRESH_RED_HEIGHT_ROI) if int(v-THRESH_RED_HEIGHT_ROI) > 0 else 0
-        ub_height = int(v+THRESH_RED_HEIGHT_ROI) if int(v+THRESH_RED_HEIGHT_ROI) < height else height-1
+        leftImg_lb_width = int(u_l-THRESH_RED_WIDTH_ROI) if int(u_l-THRESH_RED_WIDTH_ROI) > 0 else 0
+        leftImg_ub_width = int(u_l+THRESH_RED_WIDTH_ROI) if int(u_l+THRESH_RED_WIDTH_ROI) < width else width-1
+        leftImg_lb_height = int(v_l-THRESH_RED_HEIGHT_ROI) if int(v_l-THRESH_RED_HEIGHT_ROI) > 0 else 0
+        leftImg_ub_height = int(v_l+THRESH_RED_HEIGHT_ROI) if int(v_l+THRESH_RED_HEIGHT_ROI) < height else height-1
+        rightImg_lb_width = int(u_r-THRESH_RED_WIDTH_ROI) if int(u_r-THRESH_RED_WIDTH_ROI) > 0 else 0
+        rightImg_ub_width = int(u_r+THRESH_RED_WIDTH_ROI) if int(u_r+THRESH_RED_WIDTH_ROI) < width else width-1
+        rightImg_lb_height = int(v_r-THRESH_RED_HEIGHT_ROI) if int(v_r-THRESH_RED_HEIGHT_ROI) > 0 else 0
+        rightImg_ub_height = int(v_r+THRESH_RED_HEIGHT_ROI) if int(v_r+THRESH_RED_HEIGHT_ROI) < height else height-1
 
         if self.print_messages:
             print('(height, width) = ({0}, {1})'.format(height,width))
             print('time_since_detection: {0}'.format(time_since_detection))
-            #print('leftImg[{0}:{1},{2}:{3}]'.format(leftImg_lb_height,leftImg_ub_height,leftImg_lb_width,leftImg_ub_width))
-            #print('rightImg[{0}:{1},{2}:{3}]'.format(rightImg_lb_height,rightImg_ub_height,rightImg_lb_width,rightImg_ub_width))
+            print('leftImg[{0}:{1},{2}:{3}]'.format(leftImg_lb_height,leftImg_ub_height,leftImg_lb_width,leftImg_ub_width))
+            print('rightImg[{0}:{1},{2}:{3}]'.format(rightImg_lb_height,rightImg_ub_height,rightImg_lb_width,rightImg_ub_width))
         
-        if lb_width >= ub_width or lb_height >= ub_height:
+        if leftImg_lb_width >= leftImg_ub_width or leftImg_lb_height >= leftImg_ub_height or rightImg_lb_width >= rightImg_ub_width or rightImg_lb_height >= rightImg_ub_height:
             return
 
-        img = img[lb_height:ub_height, lb_width:ub_width]
+        leftImg = leftImg[leftImg_lb_height:leftImg_ub_height, leftImg_lb_width:leftImg_ub_width]
+        rightImg = rightImg[rightImg_lb_height:rightImg_ub_height, rightImg_lb_width:rightImg_ub_width]
         if self.show_thresh_red_images:
-            self.red_roi_pub.publish(self.bridge.cv_to_imgmsg(img))
-            #cv.ShowImage("smaller %s"%self.arm, img)
-            #cv.WaitKey(3)
-        thresh0 = cv.CreateImage(cv.GetSize(img),8,1)  
-        hsvImg0 = cv.CreateImage(cv.GetSize(img),8,3)
-        hsvImg1 = cv.CreateImage(cv.GetSize(img),8,3)  
-        thresh1 = cv.CreateImage(cv.GetSize(img),8,1)       
-        thresh0 = threshold(img, hsvImg0, thresh0, RED_LOWER0, RED_UPPER0, erode_and_dilate=False)
-        thresh1 = threshold(img, hsvImg1, thresh1, RED_LOWER1, RED_UPPER1, erode_and_dilate=False)
-        cv.Or(thresh0, thresh1, thresh0)
+            self.red_roi_pub.publish(self.bridge.cv_to_imgmsg(leftImg))
+
+        leftThresh = cv.CreateImage(cv.GetSize(leftImg),8,1)
+        rightThresh = cv.CreateImage(cv.GetSize(rightImg),8,1)        
+        leftThresh = threshold(leftImg, leftImg, leftThresh, RED_LOWER, RED_UPPER)
+        rightThresh = threshold(rightImg, rightImg, rightThresh, RED_LOWER, RED_UPPER)
         
         if self.show_thresh_red_images:
-            self.red_thresh_roi_pub.publish(self.bridge.cv_to_imgmsg(thresh0))
-            #cv.ShowImage("thresh red only %s"%self.arm, thresh0)
-            #cv.WaitKey(3)
-        
-        all_zs = []
-        zs = []
-        gripper_z = gripper_pos.z
-        z_bound = .02
-        for width in xrange(ub_width - lb_width):
-            for height in xrange(ub_height - lb_height):
-                if thresh0[height,width] != 0.0:
-                    depth = self.depthImage[lb_height+height, lb_width+width]
-                    if not np.isnan(depth):
-                        all_zs.append(depth)
-                        if math.fabs(gripper_z - depth) > z_bound:
-                            #print 'setting to 0'
-                            thresh0[height,width] = 0.0
-                    #if np.isnan(depth) or math.fabs(gripper_z - depth) > z_bound:
-                    #    thresh0[height,width] = 0.0
-                    else:
-                        zs.append(depth)
-        
-        avgz = sum(zs) / len(zs) if len(zs) > 0 else -1
-        avg_allz = sum(all_zs) / len(all_zs) if len(all_zs) > 0 else -1
-        
-        #print 'Gripper_z = {0}'.format(gripper_z)
-        #print 'Average_z = {0}'.format(avgz)
-        #print 'Avg_all_z = {0}\n'.format(avg_allz)
-        
-        if self.show_thresh_red_images:
-            self.red_depth_thresh_roi_pub.publish(self.bridge.cv_to_imgmsg(thresh0))
-            #cv.ShowImage("thresh red and depth %s"%self.arm, thresh0)
-            #cv.WaitKey(3)
-        contours = find_contours(thresh0, "thresh")
+            self.red_thresh_roi_pub.publish(self.bridge.cv_to_imgmsg(leftThresh))
+
+        leftContours = find_contours(leftThresh, "leftThresh")
+        rightContours = find_contours(rightThresh, "rightThresh")
         foundRed = True
-        if len(contours) > 0:
+        if len(leftContours) > 0 or len(rightContours) > 0:
             self.lastFoundRed = rospy.Time.now()
             foundRed = True
         else:
@@ -542,6 +486,7 @@ class ColorSegmenter(object):
         
         ROI_height = expandROIRegion(self.gripper_ROI_size.height, time_since_detection, height)
         ROI_width = expandROIRegion(self.gripper_ROI_size.width, time_since_detection, width)
+        
         
         lower_height_bound = int(pixel[1]) - ROI_height
         lower_width_bound = int(pixel[0]) - ROI_width
@@ -870,7 +815,6 @@ def main():
     color1 = ColorDescription(color1_name,color1_lower,color1_upper)
     color2 = ColorDescription(color2_name,color2_lower,color2_upper)
 
-    """
     red_lower = RED_LOWER
     red_upper = RED_UPPER
     if args.red_hsv:
@@ -881,7 +825,6 @@ def main():
             red_lower = args.red_lower
         if args.red_upper:
             red_upper = args.red_upper
-    """
 
     if args.ROI_size:
         ROI = ROI_size(*args.ROI_size)
@@ -896,7 +839,7 @@ def main():
             delattr(args,name)
     
     kwargs = vars(args).copy()
-    #kwargs['red'] = ColorDescription('red',red_lower,red_upper)
+    kwargs['red'] = ColorDescription('red',red_lower,red_upper)
     kwargs['red_ROI_size'] = red_ROI_size
     
     gs = ColorSegmenter(arm, camera_name, ROI,
