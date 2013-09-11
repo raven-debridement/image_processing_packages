@@ -5,12 +5,14 @@ roslib.load_manifest('anaglyph')
 import sys
 import rospy
 import cv
+import cv2
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import argparse
+import numpy as np
 
-DELTA = 10
+DELTA = 8
 
 class Getch:
 	"""Gets a single character from standard input.  Does not echo to the screen.
@@ -74,9 +76,9 @@ class Getch:
 	def yesno(self,prompt = None):
 		return self(prompt=prompt,yesno=True)
 
-class image_converter:
+class stereogram_converter:
 
-    def __init__(self, publish_topic, left_image_topic, right_image_topic, width_crop, height_crop):
+    def __init__(self, publish_topic, left_image_topic, right_image_topic, width_crop, height_crop, padding_scale):
         self.image_pub = rospy.Publisher(publish_topic,Image)
 
         #cv.NamedWindow("Image window", 1)
@@ -88,77 +90,108 @@ class image_converter:
 	self.out = False
 	self.width_crop = width_crop
 	self.height_crop = height_crop
+        self.leftPresent=False
+        self.rightPresent=False
 
+        self.paddingScale = padding_scale
+        self.paddingWidth = None
+        self.paddingHeight = None
+
+	cv.NamedWindow("Name", cv.CV_WINDOW_NORMAL);
+    	cv2.setWindowProperty("Name", cv2.WND_PROP_FULLSCREEN, cv2.cv.CV_WINDOW_FULLSCREEN);
+   	
     def left_callback(self,data):
         try:
-            self.left = self.bridge.imgmsg_to_cv(data, "bgr8")
-	    self.process()
+            if not self.leftPresent:
+                    self.left = self.bridge.imgmsg_to_cv(data, "bgr8")
+                    self.leftPresent = True
+                    self.process()
         except CvBridgeError, e:
             print e
 	
     def right_callback(self, data):
 	try:
-	    self.right = self.bridge.imgmsg_to_cv(data, "bgr8")
-	    self.process()
+            if not self.rightPresent:
+                    self.right = self.bridge.imgmsg_to_cv(data, "bgr8")
+                    self.rightPresent = True
+                    self.process()
 	except CvBridgeError, e:
 	    print e
 
     def change_width_crop(self, delta):
 	self.width_crop += delta
+        if self.width_crop < 0:
+                self.width_crop = 0
 
     def change_height_crop(self, delta):
 	self.height_crop += delta
+        if self.height_crop < 0:
+                self.height_crop = 0
 
     def process(self):
-	if self.left!=False and self.right!=False:
-	    channels = []
+	if self.leftPresent!=False and self.rightPresent!=False:
+
 	    w = int((self.width_crop)/2)
 	    h = int((self.height_crop)/2)
-	    self.left = self.left[0:self.left.height-h, w:self.left.width]
-	    self.right = self.right[h:self.right.height, 0:self.right.width-w]
-	    for i in range(3):
-		channels.append(cv.CreateImage(cv.GetSize(self.left),8,1))
-	    for i in range(3):
-		channels.append(cv.CreateImage(cv.GetSize(self.right),8,1))
-	    cv.Split(self.left, channels[0], channels[1], channels[2], None)
-  	    cv.Split(self.right, channels[3], channels[4], channels[5], None)
-	    merge = cv.CreateImage(cv.GetSize(self.left), 8, 3)
-   	    cv.Merge(channels[3],channels[4],channels[2], None, merge)
-            #cv.ShowImage("Image window", merge)
-            #cv.WaitKey(3)
-            try:
-                self.image_pub.publish(self.bridge.cv_to_imgmsg(merge, "bgr8"))
+
+            leftHeight = self.left.rows - h
+            leftWidth = self.left.cols - w
+            rightHeight = self.right.rows - h
+            rightWidth = self.right.cols - w
+            paddingWidth = int(leftWidth * self.paddingScale)
+            paddingHeight = int(leftHeight * self.paddingScale)
+            print "WH ", self.width_crop, self.height_crop
+
+
+	    self.out = cv.CreateMat(2*paddingHeight + leftHeight, 2*paddingWidth + leftWidth + 2*paddingWidth + rightWidth, self.left.type)
+            cv.SetZero(self.out)
+
+	    subRectLeft = cv.GetSubRect(self.out, (paddingWidth, paddingHeight, leftWidth, leftHeight))
+	    subRectRight = cv.GetSubRect(self.out, (3*paddingWidth + leftWidth, paddingHeight, rightWidth, rightHeight))
+            croppedLeft = cv.GetSubRect(self.left,  (w, 0, leftWidth, leftHeight))
+            croppedRight = cv.GetSubRect(self.right, (0, 0, rightWidth, rightHeight))
+
+	    cv.Copy(croppedLeft, subRectLeft)
+            cv.Copy(croppedRight, subRectRight)
+	    cv.ShowImage("Name", self.out);
+	    cv.WaitKey(10)
+	    try:
+                self.image_pub.publish(self.bridge.cv_to_imgmsg(self.out, "bgr8"))
             except CvBridgeError, e:
                 print e
-	    self.left = False
-	    self.right = False
+
+	    self.leftPresent = False
+	    self.rightPresent = False
+	    self.left = None
+	    self.right = None
 
 def main(args):
-    publish_topic = "anaglyph_images"
+    publish_topic = "stereogram_images"
     left_image_topic = 'left_image_topic'
     parser = argparse.ArgumentParser()
-    parser.add_argument('--horizontal',type=int,default=260)
+    parser.add_argument('--horizontal',type=int,default=640)
     parser.add_argument('--vertical',type=int,default=0)
+    parser.add_argument('--padding',type=float,default=0.75)
     args = parser.parse_args(rospy.myargv()[1:])
     width_crop = args.horizontal
     height_crop = args.vertical
+    padding_scale = args.padding
     right_image_topic = 'right_image_topic' 
-    ic = image_converter(publish_topic, left_image_topic, right_image_topic, width_crop, height_crop)
-    rospy.init_node('image_converter', anonymous=True)
+    sc = stereogram_converter(publish_topic, left_image_topic, right_image_topic, width_crop, height_crop, padding_scale)
+    rospy.init_node('stereogram_converter', anonymous=True)
     print "USE THE period AND comma KEYS TO CHANGE THE HORIZONTAL BASELINE BETWEEN THE LEFT AND RIGHT IMAGES, AND USE THE / AND ' KEYS TO CHANGE THE VERTICAL DISPARITY"
     try:
 	getch = Getch()
         while not rospy.is_shutdown():
    	    ch = getch('Hit a key')
-	    print ord(ch)
 	    if ord(ch)==44:
-		ic.change_width_crop(DELTA)
+		sc.change_width_crop(DELTA)
 	    elif ord(ch)==46:
-		ic.change_width_crop(-DELTA)
+		sc.change_width_crop(-DELTA)
 	    elif ord(ch)==39:
-		ic.change_height_crop(DELTA)
+		sc.change_height_crop(DELTA)
 	    elif ord(ch)==47:
-		ic.change_height_crop(-DELTA)
+		sc.change_height_crop(-DELTA)
  	    if Getch.is_ctrl_c(ch):
 		rospy.signal_shutdown('shutting down')
 	        break
