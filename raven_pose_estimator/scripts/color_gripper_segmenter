@@ -43,15 +43,15 @@ ROI_size = namedtuple('ROI_size','width height')
 ########################################
 
 # right gripper
-GREEN_LOWER = (38, 45, 50) #THESE ARE THE GREEN PAPER VALUES
+GREEN_LOWER = (38, 40, 50) #THESE ARE THE GREEN PAPER VALUES
 GREEN_UPPER = (99, 255, 255)
-ORANGE_LOWER = (5, 35, 200) # THESE ARE THE ORANGE PAPER VALUES
+ORANGE_LOWER = (5, 40, 200) # THESE ARE THE ORANGE PAPER VALUES
 ORANGE_UPPER = (35, 255, 255)
 
 # left gripper
 PURPLE_LOWER = (125, 15, 140)
 PURPLE_UPPER = (170, 255, 255)
-BLUE_LOWER = (100, 45, 100)
+BLUE_LOWER = (100, 35, 100)
 BLUE_UPPER = (125, 255, 255)
 
 # TEMP: since only for one gripper at a time
@@ -60,7 +60,7 @@ BLUE_UPPER = (125, 255, 255)
 #ORANGE_LOWER = BLUE_LOWER
 #ORANGE_UPPER = BLUE_UPPER
 
-DEFAULT_ROI_SIZE = ROI_size(300,300)
+DEFAULT_ROI_SIZE = ROI_size(300,200)
 
 RED_LOWER = (0, 100, 30) # VALUES FOR THE RED FOAM
 RED_UPPER = (3, 255, 255)
@@ -327,10 +327,13 @@ class ColorSegmenter(object):
         if self.locks[side].locked_lock():
             return
 
-        with self.locks[side]:
-
-            if not self.info.has_key(side):
-                return
+        #with self.locks[side]:
+        if True:
+            for info in self.info.values():
+                if not info:
+                    return
+            #if not self.info.has_key(side):
+            #    return
 
             self.t0[side] = time.clock()
             color2, color1, color2_contour, color1_contour = self.process(image, side)
