@@ -4,13 +4,13 @@
     <node name="stereo_image_processing" pkg="stereo_image_proc" type="stereo_image_proc" />
 
 
-    <node name="converter" pkg="anaglyph" type="anaglyph_converter" output="screen">
+    <node name="stereogram_converter" pkg="anaglyph" type="stereogram_converter" output="screen">
         <remap from="left_image_topic" to="/BC/left/image_rect_color" />
         <remap from="right_image_topic" to="/BC/right/image_rect_color" />
-    	<param name="publish_topic" value="anaglyph_images"/>
+    	<param name="publish_topic" value="stereogram_images"/>
     </node>
 
-    <node name="anaglyph_viewer" pkg="image_view" type="image_view">
-        <remap from="image" to="anaglyph_images" /> 
+    <node name="stereogram_viewer" pkg="image_view" type="image_view">
+        <remap from="image" to="stereogram_images" /> 
     </node>
 </launch>
