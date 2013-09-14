@@ -44,14 +44,14 @@ ROI_size = namedtuple('ROI_size','width height')
 
 # right gripper
 GREEN_LOWER = (38, 40, 50) #THESE ARE THE GREEN PAPER VALUES
-GREEN_UPPER = (99, 255, 255)
-ORANGE_LOWER = (5, 40, 200) # THESE ARE THE ORANGE PAPER VALUES
+GREEN_UPPER = (105, 255, 255)
+ORANGE_LOWER = (6, 60, 155) # THESE ARE THE ORANGE PAPER VALUES
 ORANGE_UPPER = (35, 255, 255)
 
 # left gripper
-PURPLE_LOWER = (125, 15, 140)
+PURPLE_LOWER = (125, 15, 100)
 PURPLE_UPPER = (170, 255, 255)
-BLUE_LOWER = (100, 35, 100)
+BLUE_LOWER = (106, 100, 60)
 BLUE_UPPER = (125, 255, 255)
 
 # TEMP: since only for one gripper at a time
@@ -304,7 +304,7 @@ class ColorSegmenter(object):
         self.red_thresh_pub = rospy.Publisher('found_red_%s'%self.arm, Bool)
         
         self.lastFoundRed = None
-        self.redHistoryDuration = rospy.Duration(1)
+        self.redHistoryDuration = rospy.Duration(.5)
         
         
         self.red_roi_pub = rospy.Publisher('red_roi_%s'%self.arm, Image)
@@ -389,7 +389,7 @@ class ColorSegmenter(object):
 
     def threshRed(self):
         THRESH_RED_WIDTH_ROI = 200
-        THRESH_RED_HEIGHT_ROI = 100
+        THRESH_RED_HEIGHT_ROI = 90
         
         if not self.img.has_key('left') or not self.img.has_key('right'):
             return

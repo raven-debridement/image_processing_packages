@@ -2,6 +2,7 @@
 
 import roslib
 roslib.load_manifest('anaglyph')
+import datetime
 import sys
 import rospy
 import cv
@@ -144,7 +145,9 @@ class stereogram_converter:
 
 
 	    self.out = cv.CreateMat(2*paddingHeight + leftHeight, 2*paddingWidth + leftWidth + 2*paddingWidth + rightWidth, self.left.type)
-            cv.SetZero(self.out)
+
+	    # self.out[paddingHeight:(paddingHeight+leftHeight), paddingWidth:(paddingWidth+leftWidth)] = self.left[0:leftHeight, w:(w+leftWidth)]
+	    # self.out[paddingHeight:(paddingHeight+rightHeight), (3*paddingWidth+leftWidth):(3*paddingWidth+leftWidth+rightWidth)] = self.right[0:rightHeight, 0:rightWidth]
 
 	    subRectLeft = cv.GetSubRect(self.out, (paddingWidth, paddingHeight, leftWidth, leftHeight))
 	    subRectRight = cv.GetSubRect(self.out, (3*paddingWidth + leftWidth, paddingHeight, rightWidth, rightHeight))
@@ -153,12 +156,9 @@ class stereogram_converter:
 
 	    cv.Copy(croppedLeft, subRectLeft)
             cv.Copy(croppedRight, subRectRight)
+
 	    cv.ShowImage("Name", self.out);
-	    cv.WaitKey(10)
-	    try:
-                self.image_pub.publish(self.bridge.cv_to_imgmsg(self.out, "bgr8"))
-            except CvBridgeError, e:
-                print e
+	    cv.WaitKey(1)
 
 	    self.leftPresent = False
 	    self.rightPresent = False
