@@ -1,3 +1,7 @@
+"""
+DEPRECATED: current version in raven_2_vision
+"""
+
 #!/usr/bin/env python
 
 # Import required Python code.
